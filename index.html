@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Public Tools Dashboard</title>
+<style>
+  :root{
+    --bg:#f7f9fc; --panel:#ffffff; --muted:#6b7280; --text:#0f172a; --border:#e5e7eb;
+    --pri:#2563eb; --pri-weak:#e8f0ff; --ok:#16a34a; --warn:#f59e0b;
+    --grad:linear-gradient(135deg,#eff4ff, #fdf7ff 60%);
+    --shadow:0 10px 30px rgba(17,24,39,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+
+  header{position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--border);padding:14px 18px;display:flex;gap:12px;align-items:center;z-index:10}
+  .brand{font-weight:800;letter-spacing:.2px}
+  .repo{color:var(--muted);font-size:14px}
+  .actions{margin-left:auto;display:flex;gap:8px}
+  .actions button{padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--panel);cursor:pointer;transition:transform .05s ease}
+  .actions button:active{transform:scale(.98)}
+  .actions .primary{background:var(--pri);border-color:var(--pri);color:#fff}
+
+  .app{display:flex;gap:16px;padding:16px}
+  aside{width:360px;max-width:94vw;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:var(--shadow)}
+  main{flex:1;display:flex;flex-direction:column;gap:12px}
+
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+  input[type="text"]{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;font:inherit}
+
+  .list{display:flex;flex-direction:column;gap:10px;overflow:auto;max-height:calc(100vh - 240px);padding-right:2px}
+  .tool{background:#fff;border:1px solid var(--border);border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 0 rgba(0,0,0,.02);cursor:pointer;transition:box-shadow .15s ease,border-color .15s ease}
+  .tool:hover{box-shadow:0 6px 16px rgba(15,23,42,.06);border-color:#dee3ea}
+  .tool .icon{width:34px;height:34px;border-radius:10px;background:var(--pri-weak);display:grid;place-items:center;color:var(--pri);font-weight:700}
+  .tool .meta{flex:1;min-width:0}
+  .tool .name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tool .url{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .btn{padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
+  .btn.ghost{background:#fff}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+
+  .topbar{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--border)}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;font-weight:600;font-size:12px}
+
+  iframe{flex:1;border:0;background:#fff;min-height:420px}
+
+  /* — Hero / About — */
+  .about{background:var(--panel)}
+  .hero{padding:40px 28px;background:var(--grad);border-bottom:1px solid var(--border)}
+  .hero h1{margin:0 0 8px 0;font-size:28px}
+  .hero p{margin:0;color:#475569}
+  .hero .dots{display:flex;gap:8px;margin-top:14px}
+  .dot{font-size:12px;color:#334155;padding:6px 10px;border-radius:999px;background:#ffffffa6;border:1px solid #e6ecff}
+
+  .about-body{padding:16px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:12px}
+  .card{border:1px solid var(--border);border-radius:14px;padding:14px;background:#fff}
+  .card h3{margin:0 0 6px 0;font-size:16px}
+  .card p{margin:6px 0 0 0;color:#64748b;font-size:14px}
+  .grid-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:8px}
+  .tcard{border:1px solid var(--border);border-radius:12px;padding:12px;background:#fff}
+  .tcard .tname{font-weight:700;margin-bottom:4px}
+  .muted{color:var(--muted)}
+  .tiny{font-size:12px;color:#64748b;margin-top:6px}
+  .link{color:var(--pri);text-decoration:none}
+  .link:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">🧭 Public Tools Dashboard</div>
+  <div class="repo" id="repoLabel">loading…</div>
+  <div class="actions">
+    <button id="btnRefresh" class="primary" title="Reload daftar tools">Refresh</button>
+    <button id="btnShare" class="actions" title="Copy link tool aktif">Share</button>
+  </div>
+</header>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside>
+    <div class="toolbar">
+      <input id="q" type="text" placeholder="Cari tool…" />
+    </div>
+
+    <div class="list" id="list"></div>
+
+    <div class="tiny">
+      • Letakkan file HTML di <code>tools/</code>.  
+      • <code>tools/index.html</code> akan diabaikan.  
+      • Klik <b>Refresh</b> setelah menambah file.
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main>
+    <div class="panel">
+      <div class="topbar">
+        <div id="currentTitle" class="badge">About this dashboard</div>
+        <div id="currentDesc" class="muted"></div>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button id="openTool" class="btn ghost" disabled>Open in new tab</button>
+          <button id="reloadTool" class="btn ghost" disabled>Reload</button>
+        </div>
+      </div>
+
+      <!-- About (default) -->
+      <section id="about" class="about">
+        <div class="hero">
+          <h1>Public Tools untuk Cek Data & Melindungi PII</h1>
+          <p>Semua berjalan di browser kamu — cepat, ringan, dan tidak mengirim data ke server.</p>
+          <div class="dots">
+            <span class="dot">🔒 Client-side privacy</span>
+            <span class="dot">⚡ Gratis & terbuka</span>
+            <span class="dot">🧩 Mini-tools praktis</span>
+          </div>
+        </div>
+        <div class="about-body">
+          <div class="cards">
+            <div class="card">
+              <h3>🎯 Tujuan</h3>
+              <p>Menyediakan tools sederhana untuk identifikasi data publik (NIK, plat nomor) dan perlindungan dokumen (watermark PII) demi literasi digital yang lebih aman.</p>
+            </div>
+            <div class="card">
+              <h3>👤 About Creator</h3>
+              <p id="aboutCreator">Dibuat oleh <b>Creator</b>. Ganti teks ini di CONFIG untuk menampilkan nama & tautan (GitHub/LinkedIn/Email).</p>
+            </div>
+            <div class="card">
+              <h3>🤝 Support & Dukungan</h3>
+              <p>Kirim saran/ide lewat GitHub Issues, dan dukung via Saweria/Trakteer. Berbagi tautan ini juga sudah membantu banyak!</p>
+            </div>
+            <div class="card">
+              <h3>🛡️ Privasi & Disclaimer</h3>
+              <p>Semua pemrosesan dilakukan <i>client-side</i>. Informasi bersifat edukatif & informatif, bukan untuk keperluan administratif/resmi. Penyalahgunaan tools diluar tanggungjawab kami.</p>
+            </div>
+          </div>
+
+          <div style="margin-top:18px">
+            <h3 style="margin:0 0 8px 0">🔧 Tools yang Tersedia</h3>
+            <div id="aboutTools" class="grid-tools">
+              <!-- diisi otomatis setelah discovery -->
+            </div>
+            <div class="tiny" id="aboutToolsNote">Menampilkan 6 tool terbaru (jika ada).</div>
+          </div>
+
+          <div class="tiny" style="margin-top:12px">
+            Versi: <span id="ver">1.0.0</span> · Update: <span id="upd">Nov 2025</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Iframe preview (hidden until a tool is picked) -->
+      <iframe id="frame" hidden sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ===========================
+   CONFIG — ubah sesuai repo
+   =========================== */
+let CONFIG = {
+  OWNER: "daudaldi",          // contoh: "username"
+  REPO:  "daudaldi.github.io",          // contoh: "repo"
+  CREATOR_HTML: "About the <b>Creator</b> · <a class='link' href='https://me.daudaldi.my.id' target='_blank'>portfolio</a>"
+};
+
+/* Autodetect OWNER/REPO dari URL GitHub Pages */
+(function autoDetectRepo(){
+  if (CONFIG.OWNER && CONFIG.REPO) return;
+  const host = location.hostname;                // e.g. username.github.io
+  const parts = host.split(".");
+  if (parts.length >= 3 && parts[1] === "github" && parts[2] === "io") {
+    const owner = parts[0];
+    // project pages → /<repo>/...
+    const seg = location.pathname.split("/").filter(Boolean);
+    const repo = seg.length ? seg[0] : `${owner}.github.io`;
+    CONFIG.OWNER ||= owner;
+    CONFIG.REPO  ||= repo;
+  }
+})();
+
+/* ===========================
+   STATE & ELEMENTS
+=========================== */
+let tools = []; // {id,name,url,desc}
+let currentId = null;
+
+const $ = id => document.getElementById(id);
+const listEl = $("list"), frame = $("frame"), q = $("q");
+const currentTitle = $("currentTitle"), currentDesc = $("currentDesc");
+const openTool = $("openTool"), reloadTool = $("reloadTool"), btnShare = $("btnShare");
+const btnRefresh = $("btnRefresh"), repoLabel = $("repoLabel");
+const about = $("about"), aboutCreator = $("aboutCreator");
+const aboutTools = $("aboutTools"), aboutToolsNote = $("aboutToolsNote");
+
+/* Init labels */
+function setRepoLabel(){
+  const {OWNER, REPO} = CONFIG;
+  repoLabel.textContent = OWNER && REPO ? `${OWNER}/${REPO} · tools/` : "Repo tidak dikenali";
+}
+function setCreator(){
+  aboutCreator.innerHTML = CONFIG.CREATOR_HTML || aboutCreator.innerHTML;
+}
+setRepoLabel();
+setCreator();
+
+/* ===========================
+   DISCOVERY via GitHub API
+=========================== */
+const BRANCH_CANDIDATES = ["gh-pages","main","master"];
+
+async function discoverTools() {
+  const {OWNER, REPO} = CONFIG;
+  tools = [];
+  if (!OWNER || !REPO) { renderList(); renderAboutTools(); showAbout(); return; }
+
+  let found = false, lastErr = null;
+  for (const ref of BRANCH_CANDIDATES) {
+    try {
+      const api = `https://api.github.com/repos/${OWNER}/${REPO}/contents/tools?ref=${encodeURIComponent(ref)}`;
+      const res = await fetch(api, {headers:{'Accept':'application/vnd.github+json'}});
+      if (!res.ok) { lastErr = new Error(`${res.status} ${res.statusText}`); continue; }
+      const arr = await res.json();
+      const htmlFiles = arr.filter(x => x.type === "file" && /\.html?$/i.test(x.name) && x.name.toLowerCase() !== "index.html");
+
+      // Bangun URL publik untuk GitHub Pages: origin + basePath (tanpa trailing /) + /tools/<file>
+      const basePath = window.location.pathname.replace(/\/$/,''); // e.g. /repo
+      const publicBase = `${window.location.origin}${basePath}/tools`;
+
+      tools = htmlFiles.map(f => ({
+        id: crypto.randomUUID(),
+        name: prettifyName(f.name),
+        url: `${publicBase}/${encodeURIComponent(f.name)}`,
+        desc: suggestDesc(f.name)
+      }));
+
+      found = true;
+      break;
+    } catch (e) { lastErr = e; }
+  }
+  if (!found && lastErr) console.warn("Discovery gagal:", lastErr);
+
+  renderList();
+  renderAboutTools();
+
+  // auto-select dari query / atau tampil About
+  if (!selectFromQuery() && tools.length) {
+    showAbout(); // tetap tampil About dulu; user pilih tool sendiri
+  } else if (!tools.length) {
+    showAbout();
+  }
+}
+
+function prettifyName(filename){
+  return filename.replace(/\.html?$/i,"")
+                 .replace(/[-_]/g," ")
+                 .replace(/\b\w/g, m => m.toUpperCase());
+}
+
+function suggestDesc(filename){
+  const f = filename.toLowerCase();
+  if (f.includes("nik")) return "Identifikasi & generator NIK (KTP) + kode wilayah.";
+  if (f.includes("nopol") || f.includes("plat")) return "Cek asal daerah nomor polisi (plat) Indonesia.";
+  if (f.includes("watermark")) return "Tambah watermark teks untuk melindungi dokumen PII.";
+  return "Utility web — berjalan langsung di browser.";
+}
+
+/* ===========================
+   LIST (sidebar)
+=========================== */
+function toolRow(t){
+  const div = document.createElement("div");
+  div.className = "tool";
+  div.dataset.id = t.id;
+
+  const icon = document.createElement("div");
+  icon.className = "icon"; icon.textContent = "T";
+
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  const nm = document.createElement("div");
+  nm.className = "name"; nm.textContent = t.name;
+  const ul = document.createElement("div");
+  ul.className = "url"; ul.textContent = t.url;
+  meta.appendChild(nm); meta.appendChild(ul);
+
+  const btns = document.createElement("div");
+  const bOpen = document.createElement("button");
+  bOpen.className = "btn ghost"; bOpen.textContent = "Open";
+  bOpen.onclick = (e)=>{ e.stopPropagation(); window.open(t.url, "_blank"); };
+  btns.appendChild(bOpen);
+
+  div.appendChild(icon); div.appendChild(meta); div.appendChild(btns);
+  div.onclick = ()=>selectTool(t.id);
+
+  return div;
+}
+
+function makeAboutItem(){
+  const div = document.createElement("div");
+  div.className = "tool";
+  div.dataset.id = "about";
+  const icon = document.createElement("div");
+  icon.className = "icon"; icon.textContent = "ℹ";
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  const nm = document.createElement("div");
+  nm.className = "name"; nm.textContent = "About Dashboard";
+  const ul = document.createElement("div");
+  ul.className = "url"; ul.textContent = "Informasi & tujuan proyek";
+  meta.appendChild(nm); meta.appendChild(ul);
+  const btns = document.createElement("div");
+  const bOpen = document.createElement("button");
+  bOpen.className = "btn ghost"; bOpen.textContent = "Open";
+  bOpen.onclick = (e)=>{ e.stopPropagation(); showAbout(); };
+  btns.appendChild(bOpen);
+  div.appendChild(icon); div.appendChild(meta); div.appendChild(btns);
+  div.onclick = showAbout;
+  return div;
+}
+
+function renderList(){
+  const term = (q.value||"").toLowerCase().trim();
+  listEl.innerHTML = "";
+  listEl.appendChild(makeAboutItem());
+  tools
+    .filter(t => !term || t.name.toLowerCase().includes(term) || t.url.toLowerCase().includes(term))
+    .forEach(t => listEl.appendChild(toolRow(t)));
+}
+
+/* ===========================
+   ABOUT: tools grid
+=========================== */
+function renderAboutTools(){
+  aboutTools.innerHTML = "";
+  const subset = tools.slice(0,6);
+  if (!subset.length){
+    aboutTools.innerHTML = `<div class="tcard"><div class="tname">Belum ada tool</div><div class="muted">Tambahkan file .html ke folder <code>tools/</code>.</div></div>`;
+    aboutToolsNote.style.display = "none";
+    return;
+  }
+  subset.forEach(t=>{
+    const el = document.createElement("div");
+    el.className = "tcard";
+    el.innerHTML = `
+      <div class="tname">${t.name}</div>
+      <div class="muted" style="min-height:36px">${t.desc||""}</div>
+      <div class="tiny" style="margin-top:8px">
+        <a class="link" href="${t.url}" target="_blank">Buka langsung ↗</a> ·
+        <a class="link" href="javascript:void(0)" data-id="${t.id}">Preview di panel</a>
+      </div>
+    `;
+    el.querySelector('a[data-id]').addEventListener('click', ()=>selectTool(t.id));
+    aboutTools.appendChild(el);
+  });
+  aboutToolsNote.style.display = subset.length ? "block" : "none";
+}
+
+/* ===========================
+   VIEW / SELECT
+=========================== */
+function selectTool(id, push=true){
+  if (id === "about"){ showAbout(); return; }
+  const t = tools.find(x => x.id === id);
+  if(!t) return;
+  currentId = id;
+  currentTitle.textContent = t.name || "Untitled";
+  currentDesc.textContent = t.desc || "";
+  about.hidden = true;
+  frame.hidden = false;
+  frame.src = t.url;
+  openTool.disabled = false;
+  reloadTool.disabled = false;
+  if (push) updateQueryId(id);
+}
+
+function showAbout(){
+  currentId = "about";
+  currentTitle.textContent = "About this dashboard";
+  currentDesc.textContent = "";
+  frame.hidden = true;
+  about.hidden = false;
+  openTool.disabled = true;
+  reloadTool.disabled = true;
+  updateQueryId(null);
+}
+
+/* ===========================
+   SHARE (?id=...)
+=========================== */
+function updateQueryId(id){
+  const url = new URL(window.location.href);
+  if(id) url.searchParams.set("id", id); else url.searchParams.delete("id");
+  history.replaceState(null, "", url.toString());
+}
+function selectFromQuery(){
+  const url = new URL(window.location.href);
+  const id = url.searchParams.get("id");
+  if(!id) return false;
+  if (id === "about"){ showAbout(); return true; }
+  const exists = tools.some(t=>t.id===id);
+  if(exists){ selectTool(id, false); return true; }
+  return false;
+}
+
+/* ===========================
+   EVENTS
+=========================== */
+$("openTool").onclick = ()=>{ const t = tools.find(x=>x.id===currentId); if(t) window.open(t.url, "_blank"); };
+$("reloadTool").onclick = ()=>{ if(!frame.hidden && frame.src) frame.contentWindow.location.reload(); };
+$("btnShare").onclick = ()=>{
+  const link = window.location.href;
+  navigator.clipboard.writeText(link).then(()=>{ $("btnShare").textContent = "Copied!"; setTimeout(()=>$("btnShare").textContent="Share",900); });
+};
+$("btnRefresh").onclick = ()=>discoverTools();
+q.addEventListener("input", renderList);
+
+/* ===========================
+   BOOT
+=========================== */
+discoverTools();
+
+/* Versi info */
+$("ver").textContent = "1.0.0";
+$("upd").textContent = "Nov 2025";
+</script>
+</body>
+</html>

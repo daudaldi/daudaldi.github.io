@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Client-side Image Watermark (PII) — with Sliders</title>
+  <style>
+    :root { --p: #2b6cb0; --ok:#1f7a4c; }
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin: 18px; color: #111; }
+    h1 { font-size: 20px; margin-bottom: 6px; }
+    .wrap { display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap; }
+    .controls { width:380px; max-width: 100%; min-width:280px }
+    .controls label { display:block; margin-top:10px; font-weight:600; font-size:13px; }
+    .controls input[type="text"], .controls select { width:100%; padding:8px; margin-top:6px; box-sizing:border-box; }
+    .row { display:flex; gap:8px; align-items:center; }
+    .col { flex:1; }
+    .ctrl { margin-top:8px; }
+    .ctrl .row > * { flex:1; }
+    .num { width:110px; }
+    input[type="range"] { width:100%; }
+    .canvas-wrap { background:#f6f7fb; padding:12px; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+    canvas { max-width:80vw; height:auto; display:block; border:1px solid #ddd; }
+    button { margin-top:12px; padding:10px 12px; cursor:pointer; border-radius:6px; border:1px solid var(--p); background:var(--p); color:white; }
+    .btn-ok { background:var(--ok); border-color:var(--ok); }
+    .muted { color:#666; font-size:13px; margin-top:6px; }
+    .hint { font-size:12px; color:#666; margin-top:4px; }
+    .chip { display:inline-flex; align-items:center; gap:6px; margin-right:8px; font-size:12px; }
+  </style>
+</head>
+<body>
+  <h1>Client-side Dynamic Text Watermark (PII)</h1>
+  <p class="muted">Semua proses 100% di browser. Upload gambar, atur watermark, lalu download PNG hasilnya.</p>
+
+  <div class="wrap">
+    <div class="controls">
+      <label>Upload gambar</label>
+      <input id="fileInput" type="file" accept="image/*" />
+
+      <label>Text watermark</label>
+      <input id="textInput" type="text" value="CONFIDENTIAL · Nama: John Doe" placeholder="Tulis watermark" />
+
+      <div class="row">
+        <div class="col">
+          <label>Font</label>
+          <select id="fontSelect">
+            <option value="Arial">Arial</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Courier New">Courier New</option>
+          </select>
+        </div>
+        <div class="num">
+          <label>Warna</label>
+          <input id="colorInput" type="color" value="#000000" />
+        </div>
+      </div>
+
+      <!-- Size -->
+      <div class="ctrl">
+        <label>Ukuran font</label>
+        <div class="row">
+          <input id="sizeRange" type="range" min="6" max="200" step="1" value="36" />
+          <input id="sizeInput" class="num" type="number" min="6" max="200" step="1" value="36" />
+        </div>
+      </div>
+
+      <!-- Opacity -->
+      <div class="ctrl">
+        <label>Opacity</label>
+        <div class="row">
+          <input id="opacityRange" type="range" min="0" max="1" step="0.01" value="0.22" />
+          <input id="opacityInput" class="num" type="number" min="0" max="1" step="0.01" value="0.22" />
+        </div>
+        <div class="hint">Saran PII: 0.15 – 0.35</div>
+      </div>
+
+      <!-- Rotation -->
+      <div class="ctrl">
+        <label>Rotasi (derajat)</label>
+        <div class="row">
+          <input id="angleRange" type="range" min="-90" max="90" step="1" value="-30" />
+          <input id="angleInput" class="num" type="number" min="-180" max="180" step="1" value="-30" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label>Mode watermark</label>
+          <select id="modeSelect">
+            <option value="single">Single (center)</option>
+            <option value="tile">Tiled / Repeat</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>Spacing (tiled)</label>
+          <div class="row">
+            <input id="spacingRange" type="range" min="40" max="600" step="5" value="220" />
+            <input id="spacingInput" class="num" type="number" min="40" max="600" step="5" value="220" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Offset for single mode -->
+      <div class="ctrl">
+        <label>Offset X / Y (mode single)</label>
+        <div class="row">
+          <div class="col">
+            <div class="row">
+              <input id="offsetXRange" type="range" min="-2000" max="2000" step="1" value="0" />
+              <input id="offsetX" class="num" type="number" min="-5000" max="5000" step="1" value="0" />
+            </div>
+          </div>
+          <div class="col">
+            <div class="row">
+              <input id="offsetYRange" type="range" min="-2000" max="2000" step="1" value="0" />
+              <input id="offsetY" class="num" type="number" min="-5000" max="5000" step="1" value="0" value="0" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <label>Opsi tambahan</label>
+      <div class="row">
+        <label class="chip"><input id="strokeCheckbox" type="checkbox" /> Stroke outline</label>
+        <label class="chip"><input id="shadowCheckbox" type="checkbox" /> Shadow</label>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button id="renderBtn">Render Watermark</button>
+        <button id="downloadBtn" class="btn-ok">Download PNG</button>
+      </div>
+      <div class="hint">Tips: kombinasikan nama, timestamp, dan identitas penerima agar sulit dihapus tanpa merusak dokumen.</div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="canvas">Your browser does not support canvas</canvas>
+      <div style="margin-top:8px;">
+        <small id="info" class="muted"></small>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== Elemen ======
+    const $ = (id)=>document.getElementById(id);
+    const fileInput = $('fileInput');
+    const canvas = $('canvas');
+    const ctx = canvas.getContext('2d');
+    const textInput = $('textInput');
+    const fontSelect = $('fontSelect');
+    const colorInput = $('colorInput');
+
+    const sizeRange = $('sizeRange');
+    const sizeInput = $('sizeInput');
+
+    const opacityRange = $('opacityRange');
+    const opacityInput = $('opacityInput');
+
+    const angleRange = $('angleRange');
+    const angleInput = $('angleInput');
+
+    const spacingRange = $('spacingRange');
+    const spacingInput = $('spacingInput');
+
+    const offsetXRange = $('offsetXRange');
+    const offsetX = $('offsetX');
+    const offsetYRange = $('offsetYRange');
+    const offsetY = $('offsetY');
+
+    const modeSelect = $('modeSelect');
+    const strokeCheckbox = $('strokeCheckbox');
+    const shadowCheckbox = $('shadowCheckbox');
+    const renderBtn = $('renderBtn');
+    const downloadBtn = $('downloadBtn');
+    const info = $('info');
+
+    let img = new Image();
+    let lastDataURL = null;
+    let renderTimer = null;
+
+    // ====== Helper: Sinkronisasi slider <-> number ======
+    function bindRangeNumber(rangeEl, numberEl, onChange) {
+      const sync = (src, dst) => () => {
+        dst.value = src.value;
+        onChange && onChange();
+      };
+      rangeEl.addEventListener('input', sync(rangeEl, numberEl));
+      numberEl.addEventListener('input', sync(numberEl, rangeEl));
+    }
+
+    // Bind semua control utama
+    bindRangeNumber(sizeRange, sizeInput, scheduleRender);
+    bindRangeNumber(opacityRange, opacityInput, scheduleRender);
+    bindRangeNumber(angleRange, angleInput, scheduleRender);
+    bindRangeNumber(spacingRange, spacingInput, scheduleRender);
+    bindRangeNumber(offsetXRange, offsetX, scheduleRender);
+    bindRangeNumber(offsetYRange, offsetY, scheduleRender);
+
+    // ====== Render utama ======
+    function render() {
+      if (!img.src) { info.textContent = 'Belum ada gambar diupload.'; return; }
+
+      const W = img.naturalWidth, H = img.naturalHeight;
+      canvas.width = W; canvas.height = H;
+      ctx.clearRect(0,0,W,H);
+      ctx.drawImage(img, 0, 0, W, H);
+
+      const text = textInput.value || '';
+      const fontSize = Math.max(6, Number(sizeInput.value) || 24);
+      const angleDeg = Number(angleInput.value) || 0;
+      const angle = angleDeg * Math.PI / 180;
+      const opacity = Math.min(1, Math.max(0, Number(opacityInput.value) || 0.2));
+      const color = colorInput.value || '#000';
+      const fontFamily = fontSelect.value || 'Arial';
+
+      ctx.save();
+      ctx.globalAlpha = opacity;
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `${fontSize}px ${fontFamily}`;
+
+      if (shadowCheckbox.checked) {
+        ctx.shadowColor = 'rgba(0,0,0,0.35)';
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetX = 3;
+        ctx.shadowOffsetY = 3;
+      } else {
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+      }
+
+      const doStroke = strokeCheckbox.checked;
+
+      if (modeSelect.value === 'single') {
+        const cx = W/2 + Number(offsetX.value || 0);
+        const cy = H/2 + Number(offsetY.value || 0);
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+
+        const lines = text.split('\\n').join('\n').split('\n');
+        const lineHeight = fontSize * 1.15;
+        const totalHeight = lineHeight * lines.length;
+
+        for (let i=0;i<lines.length;i++){
+          const y = -totalHeight/2 + i*lineHeight + lineHeight/2;
+          if (doStroke) {
+            ctx.lineWidth = Math.max(2, fontSize/12);
+            ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+            ctx.strokeText(lines[i], 0, y);
+          }
+          ctx.fillText(lines[i], 0, y);
+        }
+        ctx.rotate(-angle);
+        ctx.translate(-cx, -cy);
+
+      } else {
+        const spacing = Math.max(40, Number(spacingInput.value) || 200);
+        for (let y = -spacing; y < H + spacing; y += spacing) {
+          for (let x = -spacing; x < W + spacing; x += spacing) {
+            ctx.save();
+            ctx.translate(x + ( (y/spacing)%2 ? spacing/2 : 0 ), y);
+            ctx.rotate(angle);
+            if (doStroke) {
+              ctx.lineWidth = Math.max(1, fontSize/14);
+              ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+              ctx.strokeText(text, 0, 0);
+            }
+            ctx.fillText(text, 0, 0);
+            ctx.restore();
+          }
+        }
+      }
+
+      ctx.restore();
+      lastDataURL = canvas.toDataURL('image/png');
+      info.textContent = `Canvas: ${W}×${H}px — Siap download.`;
+    }
+
+    function scheduleRender(){
+      if (renderTimer) cancelAnimationFrame(renderTimer);
+      renderTimer = requestAnimationFrame(render);
+    }
+
+    // ====== Events ======
+    fileInput.addEventListener('change', (ev) => {
+      const f = ev.target.files && ev.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img = new Image();
+        img.onload = render;
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(f);
+    });
+
+    [textInput, fontSelect, colorInput, modeSelect, strokeCheckbox, shadowCheckbox].forEach(el=>{
+      el.addEventListener('input', scheduleRender);
+    });
+
+    renderBtn.addEventListener('click', (e)=>{ e.preventDefault(); render(); });
+
+    downloadBtn.addEventListener('click', ()=>{
+      if (!lastDataURL) { render(); if (!lastDataURL) return alert('Tidak ada gambar untuk didownload.'); }
+      const a = document.createElement('a');
+      const ts = new Date().toISOString().replace(/[:.]/g,'-');
+      a.href = lastDataURL;
+      a.download = `watermarked-${ts}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+
+    // Drag & drop ke canvas
+    canvas.addEventListener('dragover', e => e.preventDefault());
+    canvas.addEventListener('drop', e => {
+      e.preventDefault();
+      const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!f) return;
+      fileInput.files = e.dataTransfer.files;
+      fileInput.dispatchEvent(new Event('change'));
+    });
+
+    info.textContent = 'Upload file gambar untuk mulai.';
+  </script>
+</body>
+</html>

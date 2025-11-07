@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cek Nomor Polisi Indonesia</title>
+  <style>
+    body { font-family: Inter, system-ui, Arial; max-width:780px; margin:2rem auto; padding:1rem; line-height:1.55; }
+    input, button { font-size:1rem; padding:.6rem .8rem; }
+    .row { display:flex; gap:.5rem; margin-bottom:.75rem; }
+    .badge { display:inline-block; padding:.2rem .5rem; border-radius:6px; background:#eef; margin-left:.4rem; font-size:.85rem; }
+    .hint { color:#666; font-size:.92rem; }
+    .kv { background:#f8f8fb; border:1px solid #eee; border-radius:8px; padding:12px; }
+    .kv dl { display:grid; grid-template-columns: 140px 1fr; gap:6px 12px; margin:0; }
+    .kv dt { color:#555; }
+    .kv dd { margin:0; font-weight:600; }
+  </style>
+</head>
+<body>
+  <h1>Nomor Polisi Checker (Indonesia)</h1>
+  <p class="hint">
+    Masukkan nomor polisi (mis. <code>B 1234 UZ</code> atau <code>F 1 A</code>).<br/>
+    Aplikasi akan memvalidasi format, mencari daerah berdasarkan <em>prefix</em>, lalu membaca huruf pertama <em>suffix</em> sebagai <strong>kode area</strong>.
+  </p>
+
+  <div class="row">
+    <input id="inputPlate" type="text" placeholder="Contoh: B 1234 UZ" style="flex:1" />
+    <button id="btnCheck">Cek</button>
+  </div>
+
+  <div id="result" class="hint">Data prefix akan dimuat dari GitHub…</div>
+
+  <script>
+    // === Konfigurasi sumber data (sesuai contoh yang kamu berikan) ===
+    const DATA_URL = "https://raw.githubusercontent.com/riyantowibowo/indonesian-vehicle-license-plate-numbers/refs/heads/main/data.json";
+
+    // Struktur internal:
+    // {
+    //   [prefix]: {
+    //     label: "JADETABEK" | "Jawa Barat" | ...,
+    //     areas: { [areaLetter]: { city: "Jakarta Utara", province: "DKI Jakarta" | "Banten" | ... } }
+    //   },
+    //   ...
+    // }
+    const PrefixIndex = {};
+
+    // --- Util: normalisasi & parse plat ---
+    function normalizePlate(raw) {
+      // Hapus karakter non-alfanumerik, ubah ke uppercase
+      let s = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      return s.trim();
+    }
+
+    // Format umum: <prefix 1-2 huruf> <1-4 digit> <suffix 0-3 huruf>
+    function parsePlate(input) {
+      const s = normalizePlate(input);
+      // Gunakan regex yang *tidak* mengharuskan spasi
+      const re = /^([A-Z]{1,2})([1-9][0-9]{0,3})([A-Z]{0,3})$/;
+      const m = s.match(re);
+      if (!m) return null;
+
+      const prefix = m[1];
+      const number = m[2];
+      const suffix = m[3] || '';
+
+      // 🔹 buat versi ber-spasi (Normalized)
+      let formatted = prefix + ' ' + number;
+      if (suffix) formatted += ' ' + suffix;
+
+      return {
+        prefix,
+        number,
+        suffix,
+        normalized: formatted, // misal: "N 222 CKY"
+      };
+    }
+
+    // --- Util: ambil provinsi dari string "Kota, Provinsi" atau heuristik ---
+    function extractProvince(cityText, fallbackLabel) {
+      if (!cityText) return fallbackLabel || null;
+      if (cityText.includes(",")) {
+        // Ambil bagian setelah koma terakhir
+        const parts = cityText.split(",");
+        return parts[parts.length - 1].trim();
+      }
+      // Heuristik umum:
+      if (/jakarta/i.test(cityText)) return "DKI Jakarta";
+      // Tidak ada info — pakai label prefix (mis. "Jawa Barat") bila itu nama provinsi
+      // Kalau label bertipe kawasan (mis. "JADETABEK"), tetap kembalikan label tsb agar user tahu konteks
+      return fallbackLabel || null;
+    }
+
+    // --- Load & indeks data sesuai struktur contoh user ---
+    async function loadPrefixData() {
+      const res = await fetch(DATA_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const raw = await res.json();
+
+      // raw adalah object seperti:
+      // { "B": ["JADETABEK", { "U": "Jakarta Utara", "B": "Jakarta Barat", ... }], "F": ["Jawa Barat", { ... }], ... }
+      for (const [pref, arr] of Object.entries(raw)) {
+        if (!Array.isArray(arr) || arr.length < 2 || typeof arr[1] !== 'object') continue;
+        const label = String(arr[0] ?? "").trim();     // "JADETABEK" atau "Jawa Barat" dsb
+        const areaMap = arr[1];                        // objek kode area -> "Kota, Provinsi" / "Kota"
+        const areas = {};
+        for (const [letter, cityStr] of Object.entries(areaMap)) {
+          const city = String(cityStr).trim();
+          const province = extractProvince(city, label);
+          areas[letter.toUpperCase()] = { city, province };
+        }
+        PrefixIndex[pref.toUpperCase()] = { label, areas };
+      }
+      document.getElementById('result').innerHTML =
+        `<span class="hint">Data prefix termuat: <strong>${Object.keys(PrefixIndex).length}</strong> prefix.</span>`;
+    }
+
+    function lookupByPlate(parsed) {
+      const { prefix, suffix } = parsed;
+      const prefData = PrefixIndex[prefix];
+      if (!prefData) return { found: false, reason: "Prefix tidak terdaftar pada data." };
+
+      // Huruf pertama suffix = kode area (berdasarkan contoh data)
+      const areaLetter = suffix ? suffix[0].toUpperCase() : null;
+      let areaInfo = null;
+      if (areaLetter && prefData.areas[areaLetter]) {
+        areaInfo = prefData.areas[areaLetter];
+      }
+
+      return {
+        found: true,
+        prefixLabel: prefData.label,
+        areaLetter,
+        areaInfo
+      };
+    }
+
+    function renderResult(parsed, info) {
+      const resDiv = document.getElementById('result');
+      if (!info.found) {
+        resDiv.innerHTML = `<p style="color:#b00020"><strong>Prefix tidak ditemukan</strong> pada basis data.</p>`;
+        return;
+      }
+
+      const pieces = [];
+      pieces.push('<div class="kv"><dl>');
+      pieces.push(`<dt>Nopol</dt><dd>${parsed.normalized}</dd>`);
+      <!-- pieces.push(`<dt>Prefix</dt><dd>${parsed.prefix}</dd>`); -->
+      <!-- pieces.push(`<dt>Nomor</dt><dd>${parsed.number}</dd>`); -->
+      <!-- pieces.push(`<dt>Suffix</dt><dd>${parsed.suffix || '-'}</dd>`); -->
+      pieces.push(`<dt>Kode Provinsi</dt><dd>${parsed.prefix || '-'} - ${info.prefixLabel}</dd>`);
+
+      if (info.areaLetter) {
+        pieces.push(`<dt>Kode Area</dt><dd>${info.areaLetter}</dd>`);
+      } else {
+        pieces.push(`<dt>Kode Area</dt><dd><em>Tidak ada huruf area (suffix kosong)</em></dd>`);
+      }
+
+      if (info.areaInfo) {
+        const { city, province } = info.areaInfo;
+        pieces.push(`<dt>Kota/Kab</dt><dd>${city}</dd>`);
+        pieces.push(`<dt>Provinsi</dt><dd>${province || '<em>—</em>'}</dd>`);
+      } else {
+        pieces.push(`<dt>Daerah Detail</dt><dd><em>Tidak ditemukan (kode area tidak ada di data untuk prefix ini)</em></dd>`);
+      }
+      pieces.push('</dl></div>');
+
+      // Catatan bantuan
+      pieces.push(`<p class="hint">Catatan: Pada data ini, huruf pertama <strong>suffix</strong> dipakai sebagai <strong>kode area</strong> untuk prefix tertentu (mis. "B 1234 <u>U</u>Z" → U = Jakarta Utara). Jika suffix kosong atau huruf pertamanya tidak ada di data, detail daerah tidak bisa ditentukan.</p>`);
+
+      resDiv.innerHTML = pieces.join('');
+    }
+
+    // --- Event handlers ---
+    function doCheck() {
+      const val = document.getElementById('inputPlate').value;
+      const resDiv = document.getElementById('result');
+      if (!val.trim()) {
+        resDiv.innerHTML = '<p class="hint">Silakan masukkan nomor polisi.</p>';
+        return;
+      }
+
+      const parsed = parsePlate(val);
+      if (!parsed) {
+        resDiv.innerHTML = `<p style="color:#b00020"><strong>Format tidak valid</strong> — contoh benar: <code>B 1234 UZ</code> atau <code>F 1 A</code>.</p>`;
+        return;
+      }
+
+      const info = lookupByPlate(parsed);
+      renderResult(parsed, info);
+    }
+
+    document.getElementById('btnCheck').addEventListener('click', doCheck);
+    document.getElementById('inputPlate').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doCheck();
+    });
+
+    // --- Load awal ---
+    (async () => {
+      try {
+        await loadPrefixData();
+      } catch (e) {
+        document.getElementById('result').innerHTML =
+          `<p style="color:#b00020"><strong>Gagal memuat data:</strong> ${e.message}</p>
+           <p class="hint">Pastikan halaman boleh melakukan fetch ke GitHub (CORS tidak diblokir oleh environment).</p>`;
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Identifikasi & Generate NIK (Permendagri 72/2019) — Fast</title>
+<style>
+  :root{--fg:#111;--muted:#666;--ok:#0a7;--bad:#c0182a;}
+  body{font-family:Inter,system-ui,Arial;max-width:960px;margin:28px auto;padding:16px;line-height:1.55;color:var(--fg)}
+  input,button{font-size:1rem;padding:.6rem .8rem}
+  .row{display:flex;gap:.5rem;align-items:center;margin-bottom:.9rem;flex-wrap:wrap}
+  .kv{background:#fbfbfe;border:1px solid #eef;border-radius:10px;padding:14px;margin-top:8px}
+  dl{display:grid;grid-template-columns:220px 1fr;gap:6px 14px;margin:0}
+  dt{color:#555} dd{margin:0;font-weight:600}
+  .hint{color:var(--muted);font-size:.92rem}
+  .bad{color:var(--bad)}
+  .ok{color:var(--ok)}
+  details{margin-top:12px}
+  summary{cursor:pointer;font-weight:600}
+  ul.vlist{margin:8px 0 0 22px;padding:0}
+  code{background:#f4f6fa;padding:.1rem .3rem;border-radius:6px}
+</style>
+</head>
+<body>
+<h1>Identifikasi & Generate NIK (KTP) + Kode Wilayah</h1>
+<p class="hint">
+  Data source from github repo <a href="https://github.com/kodewilayah/permendagri-72-2019">kodewilayah/permendagri-72-2019</a>.
+</p>
+
+<div class="row">
+  <input id="inputNIK" type="text" placeholder="Masukkan NIK (16 digit) — mis. 3329091003780012" style="flex:1;min-width:260px"/>
+  <button id="btnParse">Parse</button>
+  <button id="btnGen">Generate</button>
+</div>
+
+<div id="result" class="kv hint">Memuat data wilayah…</div>
+
+<script>
+/* =========================
+   KONFIG & STATE
+========================= */
+const RAW_URL = "https://raw.githubusercontent.com/kodewilayah/permendagri-72-2019/main/dist/base.csv";
+const FALLBACK_API_BASE = "https://emsifa.github.io/api-wilayah-indonesia/api"; // fallback prov/kab/kec
+const LS_KEY = "wilayah_core_v1";  // cache prov/reg/dist
+
+let CSV_TEXT = null; // disimpan di memori sesi untuk lazy-load desa
+
+// peta wilayah inti (tanpa desa)
+const provMap   = Object.create(null);      // "PP"     -> "Nama Provinsi"
+const regMap    = Object.create(null);      // "PPKK"   -> "Nama Kab/Kota"
+const distMap   = Object.create(null);      // "PPKKCC" -> "Nama Kecamatan"
+
+/* =========================
+   UTIL UMUM
+========================= */
+function onlyDigits(s){ return String(s).replace(/\D/g,''); }
+function escapeHtml(s1){ const s=String(s1); return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function groupNIK(nik){
+  nik = onlyDigits(nik);
+  if (nik.length <= 6) return nik;
+  if (nik.length <= 12) return nik.slice(0,6)+' '+nik.slice(6,12)+' '+nik.slice(12);
+  return nik.slice(0,6)+' '+nik.slice(6,12)+' '+nik.slice(12,16);
+}
+
+function resolveFullYear(yy){
+  yy = Number(yy);
+  const thisYY = new Date().getFullYear() % 100;
+  return (yy > thisYY) ? 1900 + yy : 2000 + yy;
+}
+function buildDateFromDDMMYY(dd, mm, yy){
+  dd = Number(dd); mm = Number(mm); yy = Number(yy);
+  if (mm < 1 || mm > 12) return null;
+  const Y = resolveFullYear(yy);
+  const d = new Date(Y, mm - 1, dd);
+  if (d.getFullYear() !== Y || d.getMonth() !== mm - 1 || d.getDate() !== dd) return null;
+  return d;
+}
+function formatDateYMDLocal(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+/* =========================
+   PARSE NIK
+========================= */
+function parseNIK(raw){
+  const nik = onlyDigits(raw);
+  if (nik.length !== 16) return { ok:false, reason:"NIK harus 16 digit angka." };
+
+  const region6 = nik.slice(0,6);
+  const dobPart = nik.slice(6,12);
+  const serial  = nik.slice(12);
+
+  let dd = Number(dobPart.slice(0,2));
+  const mm = dobPart.slice(2,4);
+  const yy = dobPart.slice(4,6);
+
+  let gender = "Male";
+  if (dd >= 41){ gender = "Female"; dd -= 40; }
+
+  const d = buildDateFromDDMMYY(String(dd).padStart(2,'0'), mm, yy);
+
+  let birthISO = null, age = null, warn = [];
+  if (d){
+    birthISO = formatDateYMDLocal(d);
+    const today = new Date();
+    age = today.getFullYear() - d.getFullYear();
+    const mDiff = today.getMonth() - d.getMonth();
+    if (mDiff < 0 || (mDiff === 0 && today.getDate() < d.getDate())) age--;
+  } else {
+    warn.push("Tanggal lahir pada NIK tidak valid (DDMMYY).");
+  }
+
+  return {
+    ok:true, nikRaw: nik, formatted: groupNIK(nik),
+    region6, dobPart, birthISO, age, gender, serial, warn
+  };
+}
+
+/* =========================
+   FETCH CSV dgn TIMEOUT & RETRY
+========================= */
+async function fetchWithTimeout(url, ms=15000){
+  const ctrl = new AbortController();
+  const t = setTimeout(()=>ctrl.abort(), ms);
+  try{
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.text();
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+/* =========================
+   LOAD CORE WILAYAH (Prov/Kab/Kec) CEPAT
+   - pakai cache localStorage bila ada
+   - jika tidak, fetch CSV & parse core saja (tanpa desa)
+========================= */
+function applyCoreMaps(core){
+  Object.assign(provMap, core.provMap||{});
+  Object.assign(regMap,  core.regMap ||{});
+  Object.assign(distMap, core.distMap||{});
+}
+
+function serializeCore(){
+  return JSON.stringify({ provMap, regMap, distMap });
+}
+
+function parseCoreFromCSVText(text){
+  // simpan CSV di memori sesi (untuk lazy desa)
+  CSV_TEXT = text;
+
+  // Regex pasangan kode,nama — kita ambil hanya level prov/kab/kec (skip desa .dddd)
+  const re = /(\d{2}(?:\.\d{2}){0,2})(?:\.(\d{4}))?,\s*([\s\S]*?)(?=\s+\d{2}(?:\.\d{2}){0,3},|$)/g;
+  let m;
+  while((m = re.exec(text)) !== null){
+    const base = m[1];         // "PP" | "PP.KK" | "PP.KK.CC"
+    const desa = m[2];         // exist if desa/kel
+    let name  = m[3].replace(/\s+/g,' ').trim();
+    if (desa) continue;        // skip desa disini (lazy nanti)
+
+    const dotCount = (base.match(/\./g)||[]).length;
+    if (dotCount === 0){
+      provMap[base] = name;                        // "PP"
+    } else if (dotCount === 1){
+      regMap[base.replace(/\./g,'')] = name;       // "PPKK"
+    } else if (dotCount === 2){
+      distMap[base.replace(/\./g,'')] = name;      // "PPKKCC"
+    }
+  }
+}
+
+async function loadCoreFast(){
+  // 1) coba ambil dari cache
+  try{
+    const cached = localStorage.getItem(LS_KEY);
+    if (cached){
+      applyCoreMaps(JSON.parse(cached));
+      return { fromCache:true };
+    }
+  }catch{}
+
+  // 2) fetch CSV dengan timeout & retry
+  try{
+    let text;
+    try { text = await fetchWithTimeout(RAW_URL, 15000); }
+    catch { text = await fetchWithTimeout(RAW_URL, 15000); } // retry sekali
+
+    parseCoreFromCSVText(text);
+    // simpan core ke cache (kecil)
+    localStorage.setItem(LS_KEY, serializeCore());
+    return { fromCache:false };
+  }catch(e){
+    // 3) fallback ke API publik (prov/kab/kec saja)
+    await loadCoreFromFallbackAPI();
+    return { fromCache:false, fallback:true };
+  }
+}
+
+/* =========================
+   FALLBACK API (Prov/Kab/Kec) — tanpa desa
+========================= */
+async function loadCoreFromFallbackAPI(){
+  // Ambil semua provinsi
+  const provs = await fetch(`${FALLBACK_API_BASE}/provinces.json`).then(r=>r.json());
+  for (const p of provs){
+    const PP = String(p.id).padStart(2,'0');
+    provMap[PP] = p.name;
+    // regencies
+    const regs = await fetch(`${FALLBACK_API_BASE}/regencies/${p.id}.json`).then(r=>r.json());
+    for (const rg of regs){
+      const PPKK = String(rg.id).slice(0,4);
+      regMap[PPKK] = rg.name;
+      // districts
+      const dists = await fetch(`${FALLBACK_API_BASE}/districts/${rg.id}.json`).then(r=>r.json());
+      for (const d of dists){
+        const PPKKCC = String(d.id).slice(0,6);
+        distMap[PPKKCC] = d.name;
+      }
+    }
+  }
+}
+
+/* =========================
+   LAZY-LOAD DESA untuk 1 KECAMATAN
+   - pakai CSV_TEXT jika tersedia (lebih cepat & sekali fetch)
+   - bila CSV_TEXT tidak ada (mis. fallback), return null
+========================= */
+function loadVillagesForDistrict(ppkkcc){
+  if (!CSV_TEXT) return null; // fallback mode atau belum ada CSV di memori
+
+  // Pola: "PP.KK.CC.dddd, Nama ... (sampai ketemu kode berikutnya)"
+  const PP = ppkkcc.slice(0,2), KK = ppkkcc.slice(2,4), CC = ppkkcc.slice(4,6);
+  const re = new RegExp(`(${PP}\\.${KK}\\.${CC})\\.(\\d{4}),\\s*([\\s\\S]*?)(?=\\s+\\d{2}(?:\\.\\d{2}){0,3},|$)`, 'g');
+
+  const items = [];
+  let m;
+  while ((m = re.exec(CSV_TEXT)) !== null){
+    const code = `${m[1]}.${m[2]}`;
+    const name = m[3].replace(/\\s+/g,' ').trim();
+    items.push({ code, name });
+  }
+  // urutkan by code
+  items.sort((a,b)=> a.code.localeCompare(b.code, 'id'));
+  return items;
+}
+
+/* =========================
+   GENERATOR NIK
+========================= */
+function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function sample(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function randomDateYYYYMMDD(minYear=1950, maxYear=2015){
+  const y = randInt(minYear, maxYear);
+  const m = randInt(1,12);
+  const maxDay = new Date(y, m, 0).getDate();
+  const d = randInt(1, maxDay);
+  return { y, m, d };
+}
+
+function generateRandomNIK(){
+  const distKeys = Object.keys(distMap); // "PPKKCC"
+  if (!distKeys.length) throw new Error("Data wilayah belum termuat.");
+  const region6 = sample(distKeys);
+
+  const gender = sample(["Male","Female"]);
+  const { y, m, d } = randomDateYYYYMMDD(1950, 2015);
+  const yy = String(y).slice(-2);
+  let dd = d;
+  if (gender === "Female") dd = d + 40;
+
+  const dobPart = `${String(dd).padStart(2,'0')}${String(m).padStart(2,'0')}${yy}`;
+  const serial  = String(randInt(1,9999)).padStart(4,'0');
+
+  return `${region6}${dobPart}${serial}`;
+}
+
+/* =========================
+   UI
+========================= */
+const $out = document.getElementById('result');
+
+async function init(){
+  try{
+    const info = await loadCoreFast();
+    const from = info.fallback ? 'fallback API' : (info.fromCache ? 'cache lokal' : 'CSV');
+    $out.innerHTML = `<p class="${info.fallback?'bad':'ok'}">
+      Wilayah termuat dari <b>${from}</b>. Provinsi ${Object.keys(provMap).length},
+      Kab/Kota ${Object.keys(regMap).length}, Kecamatan ${Object.keys(distMap).length}.
+      ${CSV_TEXT ? 'Kel/Desa akan dimuat saat dibutuhkan (lazy).' : (info.fallback ? '<br/>Mode fallback tidak memuat data desa.' : '')}
+    </p>`;
+  }catch(e){
+    $out.innerHTML = `<p class="bad"><b>Gagal inisialisasi:</b> ${e.message}</p>`;
+  }
+}
+
+function renderVillagesHTML(villages){
+  if (!villages) return '<em>Data kelurahan/desa tidak tersedia (mode fallback).</em>';
+  if (!villages.length) return '<em>Tidak ada data kelurahan/desa untuk kecamatan ini.</em>';
+  const items = villages.map(v => `<li><code>${v.code}</code> — ${escapeHtml(v.name)}</li>`).join('');
+  return `<details open>
+    <summary>Daftar Kelurahan/Desa (${villages.length})</summary>
+    <ul class="vlist">${items}</ul>
+  </details>`;
+}
+
+function renderOutput(res, wilayah, villages){
+  const rows=[];
+  rows.push(`<dt>NIK (formatted)</dt><dd>${res.formatted}</dd>`);
+  rows.push(`<dt>Kode wilayah (6 digit)</dt><dd>${res.region6}</dd>`);
+  rows.push(`<dt>Provinsi</dt><dd>${wilayah.province ?? '<em>—</em>'}</dd>`);
+  rows.push(`<dt>Kab/Kota</dt><dd>${wilayah.regency ?? '<em>—</em>'}</dd>`);
+  rows.push(`<dt>Kecamatan</dt><dd>${wilayah.district ?? '<em>—</em>'}</dd>`);
+  rows.push(`<dt>Tanggal lahir (DDMMYY)</dt><dd>${res.dobPart}</dd>`);
+  rows.push(`<dt>Tanggal lahir (resolved)</dt><dd>${res.birthISO ?? '<span class="bad">Tidak valid</span>'}</dd>`);
+  rows.push(`<dt>Jenis kelamin</dt><dd>${res.gender}</dd>`);
+  rows.push(`<dt>Umur (tahun)</dt><dd>${res.age ?? '<em>—</em>'}</dd>`);
+  rows.push(`<dt>Serial</dt><dd>${res.serial} <span class="hint">(nomor urut pendaftaran dalam kecamatan)</span></dd>`);
+
+  const villagesHTML = renderVillagesHTML(villages);
+  let warnHTML='';
+  if (res.warn.length){
+    warnHTML = `<p class="bad"><b>Peringatan:</b></p><ul>${res.warn.map(w=>`<li>${escapeHtml(w)}</li>`).join('')}</ul>`;
+  }
+
+  $out.innerHTML = `<div class="kv"><dl>${rows.join('')}</dl></div>${warnHTML}${villagesHTML}
+  <p class="hint">Catatan: NIK menyimpan hingga <b>kecamatan</b> (6 digit). Kel/Desa diambil dari CSV hanya untuk kecamatan ini (lazy-load), sehingga halaman tetap cepat.</p>`;
+}
+
+function resolveRegionFromNik6(nik6){
+  const PP     = nik6.slice(0,2);
+  const PPKK   = nik6.slice(0,4);
+  const PPKKCC = nik6;
+  return {
+    province: provMap[PP]    || null,
+    regency : regMap[PPKK]   || null,
+    district: distMap[PPKKCC]|| null
+  };
+}
+
+function doParse(){
+  const val = document.getElementById('inputNIK').value;
+  const res = parseNIK(val);
+  if (!res.ok){
+    $out.innerHTML = `<p class="bad"><b>Invalid:</b> ${res.reason}</p>`;
+    return;
+  }
+  const wilayah = resolveRegionFromNik6(res.region6);
+  // lazy-load desa (kalau CSV_TEXT tersedia)
+  const villages = CSV_TEXT ? loadVillagesForDistrict(res.region6) : null;
+  renderOutput(res, wilayah, villages);
+}
+
+function doGenerate(){
+  try{
+    const nik = generateRandomNIK();
+    document.getElementById('inputNIK').value = nik;
+    doParse();
+  }catch(e){
+    $out.innerHTML = `<p class="bad"><b>Gagal generate:</b> ${e.message}</p>`;
+  }
+}
+
+document.getElementById('btnParse').addEventListener('click', doParse);
+document.getElementById('btnGen').addEventListener('click', doGenerate);
+document.getElementById('inputNIK').addEventListener('keydown', e => { if (e.key==='Enter') doParse(); });
+
+init();
+</script>
+</body>
+</html>
