@@ -10,12 +10,20 @@
     --pri:#2563eb; --pri-weak:#e8f0ff; --ok:#16a34a; --warn:#f59e0b;
     --grad:linear-gradient(135deg,#eff4ff, #fdf7ff 60%);
     --shadow:0 10px 30px rgba(17,24,39,.08);
+    --header-h: 64px; /* tinggi header untuk perhitungan tinggi konten */
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
 
-  header{position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--border);padding:14px 18px;display:flex;gap:12px;align-items:center;z-index:10}
+  /* HEADER */
+  header{
+    position:sticky;top:0;z-index:10;
+    display:flex;align-items:center;gap:12px;
+    height:var(--header-h);
+    padding:0 18px;
+    background:var(--panel);border-bottom:1px solid var(--border);
+  }
   .brand{font-weight:800;letter-spacing:.2px}
   .repo{color:var(--muted);font-size:14px}
   .actions{margin-left:auto;display:flex;gap:8px}
@@ -23,15 +31,39 @@
   .actions button:active{transform:scale(.98)}
   .actions .primary{background:var(--pri);border-color:var(--pri);color:#fff}
 
-  .app{display:flex;gap:16px;padding:16px}
-  aside{width:360px;max-width:94vw;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:var(--shadow)}
-  main{flex:1;display:flex;flex-direction:column;gap:12px}
+  /* LAYOUT APP */
+  .app{
+    display:flex;gap:16px;
+    /* gunakan tinggi viewport aktual (termasuk mobile browser chrome) */
+    height:calc(100dvh - var(--header-h));
+    padding:16px;
+  }
+  aside{
+    width:360px;max-width:94vw;
+    background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:12px;
+    box-shadow:var(--shadow);
+    display:flex;flex-direction:column;min-height:0;
+  }
+  main{
+    flex:1;display:flex;min-width:0;min-height:0; /* penting agar child flex bisa mengisi tinggi */
+  }
 
+  /* SIDEBAR */
   .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:10px}
   input[type="text"]{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;font:inherit}
 
-  .list{display:flex;flex-direction:column;gap:10px;overflow:auto;max-height:calc(100vh - 240px);padding-right:2px}
-  .tool{background:#fff;border:1px solid var(--border);border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 0 rgba(0,0,0,.02);cursor:pointer;transition:box-shadow .15s ease,border-color .15s ease}
+  .list{
+    display:flex;flex-direction:column;gap:10px;
+    /* isi sisa tinggi sidebar */
+    overflow:auto;min-height:0;flex:1;
+    padding-right:2px;
+  }
+  .tool{
+    background:#fff;border:1px solid var(--border);border-radius:14px;
+    padding:10px 12px;display:flex;align-items:center;gap:10px;
+    box-shadow:0 1px 0 rgba(0,0,0,.02);cursor:pointer;
+    transition:box-shadow .15s ease,border-color .15s ease
+  }
   .tool:hover{box-shadow:0 6px 16px rgba(15,23,42,.06);border-color:#dee3ea}
   .tool .icon{width:34px;height:34px;border-radius:10px;background:var(--pri-weak);display:grid;place-items:center;color:var(--pri);font-weight:700}
   .tool .meta{flex:1;min-width:0}
@@ -39,19 +71,34 @@
   .tool .url{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .btn{padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
   .btn.ghost{background:#fff}
-  .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
 
-  .topbar{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--border)}
+  .tiny{font-size:12px;color:#64748b;margin-top:8px}
+
+  /* PANEL KANAN (iframe full-height) */
+  .panel{
+    background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);
+    display:flex;flex-direction:column; /* ini kunci */
+    width:100%;min-width:0;min-height:0; /* penting */
+  }
+  .topbar{
+    flex:0 0 auto; /* jangan melar */
+    display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--border)
+  }
   .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;font-weight:600;font-size:12px}
 
-  iframe{flex:1;border:0;background:#fff;min-height:420px}
+  iframe{
+    flex:1 1 auto; /* isi semua sisa tinggi panel */
+    width:100%;
+    min-height:0; /* biar boleh lebih kecil dari konten internal */
+    border:0;background:#fff;display:block;
+  }
 
-  /* — Hero / About — */
+  /* ABOUT (hero + cards) */
   .about{background:var(--panel)}
-  .hero{padding:40px 28px;background:var(--grad);border-bottom:1px solid var(--border)}
-  .hero h1{margin:0 0 8px 0;font-size:28px}
+  .hero{padding:28px;background:var(--grad);border-bottom:1px solid var(--border)}
+  .hero h1{margin:0 0 8px 0;font-size:26px}
   .hero p{margin:0;color:#475569}
-  .hero .dots{display:flex;gap:8px;margin-top:14px}
+  .hero .dots{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
   .dot{font-size:12px;color:#334155;padding:6px 10px;border-radius:999px;background:#ffffffa6;border:1px solid #e6ecff}
 
   .about-body{padding:16px}
@@ -63,9 +110,12 @@
   .tcard{border:1px solid var(--border);border-radius:12px;padding:12px;background:#fff}
   .tcard .tname{font-weight:700;margin-bottom:4px}
   .muted{color:var(--muted)}
-  .tiny{font-size:12px;color:#64748b;margin-top:6px}
-  .link{color:var(--pri);text-decoration:none}
-  .link:hover{text-decoration:underline}
+
+  /* RESPONSIVE: sidebar di atas untuk layar kecil */
+  @media (max-width: 980px){
+    .app{flex-direction:column;height:calc(100dvh - var(--header-h));}
+    aside{width:100%}
+  }
 </style>
 </head>
 <body>
@@ -88,8 +138,7 @@
     <div class="list" id="list"></div>
 
     <div class="tiny">
-      • Letakkan file HTML di <code>tools/</code>.  
-      • <code>tools/index.html</code> akan diabaikan.  
+      • Letakkan file HTML di <code>tools/</code> (kecuali <code>index.html</code>).<br>
       • Klik <b>Refresh</b> setelah menambah file.
     </div>
   </aside>
@@ -109,7 +158,7 @@
       <!-- About (default) -->
       <section id="about" class="about">
         <div class="hero">
-          <h1>Public Tools untuk Cek Data & Melindungi PII</h1>
+          <h1>Alat Publik untuk Cek Data & Melindungi PII</h1>
           <p>Semua berjalan di browser kamu — cepat, ringan, dan tidak mengirim data ke server.</p>
           <div class="dots">
             <span class="dot">🔒 Client-side privacy</span>
@@ -121,7 +170,7 @@
           <div class="cards">
             <div class="card">
               <h3>🎯 Tujuan</h3>
-              <p>Menyediakan tools sederhana untuk identifikasi data publik (NIK, plat nomor) dan perlindungan dokumen (watermark PII) demi literasi digital yang lebih aman.</p>
+              <p>Menyediakan alat sederhana untuk identifikasi data publik (NIK, plat nomor) dan perlindungan dokumen (watermark PII) demi literasi digital yang lebih aman.</p>
             </div>
             <div class="card">
               <h3>👤 About Creator</h3>
@@ -133,15 +182,13 @@
             </div>
             <div class="card">
               <h3>🛡️ Privasi & Disclaimer</h3>
-              <p>Semua pemrosesan dilakukan <i>client-side</i>. Informasi bersifat edukatif & informatif, bukan untuk keperluan administratif/resmi. Penyalahgunaan tools diluar tanggungjawab kami.</p>
+              <p>Semua pemrosesan dilakukan <i>client-side</i>. Informasi bersifat edukatif & informatif, bukan untuk keperluan administratif/resmi.</p>
             </div>
           </div>
 
           <div style="margin-top:18px">
             <h3 style="margin:0 0 8px 0">🔧 Tools yang Tersedia</h3>
-            <div id="aboutTools" class="grid-tools">
-              <!-- diisi otomatis setelah discovery -->
-            </div>
+            <div id="aboutTools" class="grid-tools"></div>
             <div class="tiny" id="aboutToolsNote">Menampilkan 6 tool terbaru (jika ada).</div>
           </div>
 
@@ -151,7 +198,7 @@
         </div>
       </section>
 
-      <!-- Iframe preview (hidden until a tool is picked) -->
+      <!-- Iframe preview (now truly full-height) -->
       <iframe id="frame" hidden sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
     </div>
   </main>
@@ -160,21 +207,20 @@
 <script>
 /* ===========================
    CONFIG — ubah sesuai repo
-   =========================== */
+=========================== */
 let CONFIG = {
-  OWNER: "daudaldi",          // contoh: "username"
-  REPO:  "daudaldi.github.io",          // contoh: "repo"
-  CREATOR_HTML: "About the <b>Creator</b> · <a class='link' href='https://me.daudaldi.my.id' target='_blank'>portfolio</a>"
+  OWNER: "",          // contoh: "username"
+  REPO:  "",          // contoh: "repo"
+  CREATOR_HTML: "Dibuat oleh <b>Creator</b> · <a class='link' href='#' target='_blank'>portfolio</a>"
 };
 
 /* Autodetect OWNER/REPO dari URL GitHub Pages */
 (function autoDetectRepo(){
   if (CONFIG.OWNER && CONFIG.REPO) return;
-  const host = location.hostname;                // e.g. username.github.io
+  const host = location.hostname;
   const parts = host.split(".");
   if (parts.length >= 3 && parts[1] === "github" && parts[2] === "io") {
     const owner = parts[0];
-    // project pages → /<repo>/...
     const seg = location.pathname.split("/").filter(Boolean);
     const repo = seg.length ? seg[0] : `${owner}.github.io`;
     CONFIG.OWNER ||= owner;
@@ -182,9 +228,7 @@ let CONFIG = {
   }
 })();
 
-/* ===========================
-   STATE & ELEMENTS
-=========================== */
+/* STATE & ELEMENTS */
 let tools = []; // {id,name,url,desc}
 let currentId = null;
 
@@ -196,20 +240,14 @@ const btnRefresh = $("btnRefresh"), repoLabel = $("repoLabel");
 const about = $("about"), aboutCreator = $("aboutCreator");
 const aboutTools = $("aboutTools"), aboutToolsNote = $("aboutToolsNote");
 
-/* Init labels */
 function setRepoLabel(){
   const {OWNER, REPO} = CONFIG;
   repoLabel.textContent = OWNER && REPO ? `${OWNER}/${REPO} · tools/` : "Repo tidak dikenali";
 }
-function setCreator(){
-  aboutCreator.innerHTML = CONFIG.CREATOR_HTML || aboutCreator.innerHTML;
-}
-setRepoLabel();
-setCreator();
+function setCreator(){ aboutCreator.innerHTML = CONFIG.CREATOR_HTML || aboutCreator.innerHTML; }
+setRepoLabel(); setCreator();
 
-/* ===========================
-   DISCOVERY via GitHub API
-=========================== */
+/* DISCOVERY via GitHub API */
 const BRANCH_CANDIDATES = ["gh-pages","main","master"];
 
 async function discoverTools() {
@@ -226,8 +264,7 @@ async function discoverTools() {
       const arr = await res.json();
       const htmlFiles = arr.filter(x => x.type === "file" && /\.html?$/i.test(x.name) && x.name.toLowerCase() !== "index.html");
 
-      // Bangun URL publik untuk GitHub Pages: origin + basePath (tanpa trailing /) + /tools/<file>
-      const basePath = window.location.pathname.replace(/\/$/,''); // e.g. /repo
+      const basePath = window.location.pathname.replace(/\/$/,'');
       const publicBase = `${window.location.origin}${basePath}/tools`;
 
       tools = htmlFiles.map(f => ({
@@ -236,9 +273,7 @@ async function discoverTools() {
         url: `${publicBase}/${encodeURIComponent(f.name)}`,
         desc: suggestDesc(f.name)
       }));
-
-      found = true;
-      break;
+      found = true; break;
     } catch (e) { lastErr = e; }
   }
   if (!found && lastErr) console.warn("Discovery gagal:", lastErr);
@@ -246,20 +281,12 @@ async function discoverTools() {
   renderList();
   renderAboutTools();
 
-  // auto-select dari query / atau tampil About
-  if (!selectFromQuery() && tools.length) {
-    showAbout(); // tetap tampil About dulu; user pilih tool sendiri
-  } else if (!tools.length) {
-    showAbout();
-  }
+  if (!selectFromQuery()) showAbout();
 }
 
 function prettifyName(filename){
-  return filename.replace(/\.html?$/i,"")
-                 .replace(/[-_]/g," ")
-                 .replace(/\b\w/g, m => m.toUpperCase());
+  return filename.replace(/\.html?$/i,"").replace(/[-_]/g," ").replace(/\b\w/g, m => m.toUpperCase());
 }
-
 function suggestDesc(filename){
   const f = filename.toLowerCase();
   if (f.includes("nik")) return "Identifikasi & generator NIK (KTP) + kode wilayah.";
@@ -268,13 +295,10 @@ function suggestDesc(filename){
   return "Utility web — berjalan langsung di browser.";
 }
 
-/* ===========================
-   LIST (sidebar)
-=========================== */
+/* LIST (sidebar) */
 function toolRow(t){
   const div = document.createElement("div");
-  div.className = "tool";
-  div.dataset.id = t.id;
+  div.className = "tool"; div.dataset.id = t.id;
 
   const icon = document.createElement("div");
   icon.className = "icon"; icon.textContent = "T";
@@ -295,14 +319,11 @@ function toolRow(t){
 
   div.appendChild(icon); div.appendChild(meta); div.appendChild(btns);
   div.onclick = ()=>selectTool(t.id);
-
   return div;
 }
-
 function makeAboutItem(){
   const div = document.createElement("div");
-  div.className = "tool";
-  div.dataset.id = "about";
+  div.className = "tool"; div.dataset.id = "about";
   const icon = document.createElement("div");
   icon.className = "icon"; icon.textContent = "ℹ";
   const meta = document.createElement("div");
@@ -321,19 +342,15 @@ function makeAboutItem(){
   div.onclick = showAbout;
   return div;
 }
-
 function renderList(){
   const term = (q.value||"").toLowerCase().trim();
   listEl.innerHTML = "";
   listEl.appendChild(makeAboutItem());
-  tools
-    .filter(t => !term || t.name.toLowerCase().includes(term) || t.url.toLowerCase().includes(term))
-    .forEach(t => listEl.appendChild(toolRow(t)));
+  tools.filter(t => !term || t.name.toLowerCase().includes(term) || t.url.toLowerCase().includes(term))
+       .forEach(t => listEl.appendChild(toolRow(t)));
 }
 
-/* ===========================
-   ABOUT: tools grid
-=========================== */
+/* ABOUT tools grid */
 function renderAboutTools(){
   aboutTools.innerHTML = "";
   const subset = tools.slice(0,6);
@@ -359,9 +376,7 @@ function renderAboutTools(){
   aboutToolsNote.style.display = subset.length ? "block" : "none";
 }
 
-/* ===========================
-   VIEW / SELECT
-=========================== */
+/* VIEW / SELECT */
 function selectTool(id, push=true){
   if (id === "about"){ showAbout(); return; }
   const t = tools.find(x => x.id === id);
@@ -376,7 +391,6 @@ function selectTool(id, push=true){
   reloadTool.disabled = false;
   if (push) updateQueryId(id);
 }
-
 function showAbout(){
   currentId = "about";
   currentTitle.textContent = "About this dashboard";
@@ -388,9 +402,7 @@ function showAbout(){
   updateQueryId(null);
 }
 
-/* ===========================
-   SHARE (?id=...)
-=========================== */
+/* SHARE (?id=...) */
 function updateQueryId(id){
   const url = new URL(window.location.href);
   if(id) url.searchParams.set("id", id); else url.searchParams.delete("id");
@@ -406,9 +418,7 @@ function selectFromQuery(){
   return false;
 }
 
-/* ===========================
-   EVENTS
-=========================== */
+/* EVENTS */
 $("openTool").onclick = ()=>{ const t = tools.find(x=>x.id===currentId); if(t) window.open(t.url, "_blank"); };
 $("reloadTool").onclick = ()=>{ if(!frame.hidden && frame.src) frame.contentWindow.location.reload(); };
 $("btnShare").onclick = ()=>{
@@ -418,12 +428,8 @@ $("btnShare").onclick = ()=>{
 $("btnRefresh").onclick = ()=>discoverTools();
 q.addEventListener("input", renderList);
 
-/* ===========================
-   BOOT
-=========================== */
+/* BOOT */
 discoverTools();
-
-/* Versi info */
 $("ver").textContent = "1.0.0";
 $("upd").textContent = "Nov 2025";
 </script>
