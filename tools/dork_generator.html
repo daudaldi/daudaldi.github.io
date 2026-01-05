@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Dork Generator (God Mode)</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --border: #30363d;
+            --success: #2ea043;
+            --warning: #d29922;
+            --danger: #f85149;
+            --purple: #a371f7;
+            --teal: #3fb950;
+            --pink: #db61a2;
+            --gold: #d29922;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            color: var(--accent);
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--text-secondary);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            background: #0d1117;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+        }
+
+        .category-filter {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .filter-btn.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        .dork-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .dork-grid {
+                grid-template-columns: repeat(auto-fill, minmax(48%, 1fr));
+            }
+        }
+
+        .dork-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dork-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            border-color: var(--text-secondary);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .badge {
+            font-size: 0.70rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .badge.phase1 {
+            background: rgba(56, 139, 253, 0.15);
+            color: #58a6ff;
+        }
+
+        .badge.phase2 {
+            background: rgba(235, 185, 15, 0.15);
+            color: #d29922;
+        }
+
+        .badge.gems {
+            background: rgba(63, 185, 80, 0.15);
+            color: #3fb950;
+        }
+
+        .badge.phase3 {
+            background: rgba(248, 81, 73, 0.15);
+            color: #f85149;
+        }
+
+        .badge.infra {
+            background: rgba(247, 129, 102, 0.15);
+            color: #f78166;
+        }
+
+        .badge.phase4 {
+            background: rgba(163, 113, 247, 0.15);
+            color: #a371f7;
+        }
+
+        .badge.deep {
+            background: rgba(219, 97, 162, 0.15);
+            color: #db61a2;
+        }
+
+        .badge.crypto {
+            background: rgba(210, 153, 34, 0.15);
+            color: #d29922;
+            border: 1px solid rgba(210, 153, 34, 0.4);
+        }
+
+        .badge.global {
+            background: #fff;
+            color: #000;
+            border: 1px solid #ccc;
+        }
+
+        .dork-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        .dork-query-box {
+            background: #000;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.85rem;
+            color: #a5d6ff;
+            word-break: break-all;
+            margin-bottom: 15px;
+            border: 1px solid #30363d;
+            flex-grow: 1;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: background 0.2s;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-copy {
+            background: #21262d;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-copy:hover {
+            background: #30363d;
+        }
+
+        .btn-exec {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-exec:hover {
+            background: #2ea043;
+            filter: brightness(1.1);
+        }
+
+        .description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .empty-state {
+            text-align: center;
+            grid-column: 1 / -1;
+            padding: 40px;
+            color: var(--text-secondary);
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px dashed var(--border);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Ultimate Dork Generator</h1>
+            <p class="subtitle">v7.0: Smart Filter Edition - Shows ONLY what's relevant.</p>
+        </header>
+
+        <div class="controls">
+            <div class="input-group">
+                <label for="targetInput">🎯 Target Domain (e.g., example.com)</label>
+                <input type="text" id="targetInput" placeholder="Leave empty for GLOBAL search..." autocomplete="off"
+                    autofocus>
+            </div>
+            <div style="width: 100%;">
+                <label>Filter by Category:</label>
+                <div class="category-filter" id="categoryFilters">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="crypto">🪙 Crypto/Web3</button>
+                    <button class="filter-btn" data-filter="phase1">Discovery</button>
+                    <button class="filter-btn" data-filter="phase2">Recon</button>
+                    <button class="filter-btn" data-filter="gems">Hidden Gems</button>
+                    <button class="filter-btn" data-filter="phase3">Vuln Hunting</button>
+                    <button class="filter-btn" data-filter="infra">Infra</button>
+                    <button class="filter-btn" data-filter="deep">Deep Dive</button>
+                    <button class="filter-btn" data-filter="phase4">God Mode</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="dorkList" class="dork-grid">
+            <!-- Dorks will be injected here -->
+        </div>
+    </div>
+
+    <script>
+        const dorks = [
+            // ==========================================
+            // PHASE 6: CRYPTO / WEB3 (CURATED)
+            // ==========================================
+            {
+                title: "Google Cloud Keys (JSON)",
+                desc: "Service Account Keys yang terekspos (Global Ready).",
+                query: 'filetype:json "type": "service_account" "project_id" "private_key_id" -site:github.com',
+                phase: "crypto", needsTarget: false // Confirmed Global Safe
+            },
+            {
+                title: "Hardhat/Truffle Seeds",
+                desc: "Config bocor dengan mnemonic.",
+                query: 'site:github.com "hardhat.config.js" OR "truffle-config.js" "mnemonic" OR "privateKey" {target_keyword}',
+                phase: "crypto", needsTarget: true
+            },
+            {
+                title: "Audit Reports (Confidential)",
+                desc: "Draft laporan audit smart contract (Top Secret).",
+                query: 'filetype:pdf "audit report" "confidential" "smart contract" -site:github.com {target_keyword}',
+                phase: "crypto", needsTarget: true
+            },
+            {
+                title: "Tokenomics (Internal)",
+                desc: "Dokumen internal alokasi token (Lockup/Vesting).",
+                query: 'filetype:pdf OR filetype:xlsx "tokenomics" "lockup" "confidential" {target_keyword}',
+                phase: "crypto", needsTarget: true
+            },
+
+            // ==========================================
+            // PHASE 1: DISCOVERY (GLOBAL READY)
+            // ==========================================
+            { title: "The Paper Money", desc: "Global Search: Program bug bounty yang membayar cash.", query: '("bug bounty" OR "vulnerability reward") AND ("cash" OR "usd") -site:hackerone.com -site:bugcrowd.com', phase: "phase1", needsTarget: false },
+            { title: "The Hidden Policy", desc: "Global Search: security.txt standar di situs random.", query: 'inurl:"/.well-known/security.txt" "bounty" -site:github.com', phase: "phase1", needsTarget: false },
+            { title: "Web3/Crypto Docs", desc: "Global Search: Info bounty di GitBook.", query: 'site:gitbook.io ("bug bounty" OR "security") "reward"', phase: "phase1", needsTarget: false },
+
+            // ==========================================
+            // PHASE 2: RECON (TARGET MANDATORY)
+            // ==========================================
+            { title: "Dev Environment", desc: "Subdomain staging.", query: 'site:{target} -www "dev" OR "staging" OR "uat" OR "test"', phase: "phase2", needsTarget: true },
+            { title: "Admin & Portals", desc: "Pintu masuk staff/admin.", query: 'site:{target} inurl:"/admin" OR inurl:"/login" OR inurl:"/dashboard"', phase: "phase2", needsTarget: true },
+            { title: "API Mapping", desc: "Swagger/GraphQL endpoints.", query: 'site:{target} inurl:"swagger.json" OR inurl:"/graphql" OR inurl:"api-docs"', phase: "phase2", needsTarget: true },
+            { title: "Cloud Storage", desc: "S3/Azure Buckets.", query: 'site:s3.amazonaws.com "{target_keyword}" OR site:blob.core.windows.net "{target_keyword}"', phase: "phase2", needsTarget: true },
+
+            // ==========================================
+            // HIDDEN GEMS (TARGET OPTIONAL for some)
+            // ==========================================
+            { title: "Pentest Reports", desc: "Laporan pentest lama yang bocor.", query: 'filetype:pdf "penetration test report" "confidential" {target_keyword}', phase: "gems", needsTarget: true },
+            { title: "Internal Documents", desc: "Dokumen Confidential.", query: 'filetype:pdf "internal use only" "confidential" site:{target}', phase: "gems", needsTarget: true },
+
+            // ==========================================
+            // PHASE 3: VULN HUNTING (STRICT)
+            // ==========================================
+            { title: "IDOR Parameters", desc: "Parameter rentan IDOR.", query: 'site:{target} (inurl:"id=" OR inurl:"user=" OR inurl:"profile=" OR inurl:"invoice_id")', phase: "phase3", needsTarget: true },
+            { title: "Open Redirect", desc: "Parameter redirect.", query: 'site:{target} (inurl:"redirect=" OR inurl:"return=" OR inurl:"next=" OR inurl:"dest=")', phase: "phase3", needsTarget: true },
+            { title: "Exposed Logs", desc: "File log credentials.", query: 'site:{target} ext:log ("password" OR "token")', phase: "phase3", needsTarget: true },
+
+            // ==========================================
+            // INFRASTRUCTURE (REFINED)
+            // ==========================================
+            { title: "Jira Leaks", desc: "Diskusi Jira publik.", query: 'site:atlassian.net "bug" OR "vulnerability" -site:community.atlassian.com -site:marketplace.atlassian.com {target_keyword}', phase: "infra", needsTarget: true },
+            { title: "Trello Secrets", desc: "Board Trello creds.", query: 'site:trello.com ("password" OR "credential" OR "secret") {target_keyword}', phase: "infra", needsTarget: true },
+            { title: "Jenkins Dashboard", desc: "Jenkins Dashboard Login.", query: 'intitle:"Dashboard [Jenkins]" OR inurl:"/jenkins/login" {target_keyword}', phase: "infra", needsTarget: true },
+            { title: "GitLab Secrets", desc: "Snippet code private token.", query: 'site:gitlab.com "private_token" OR "api_token" ext:txt {target_keyword}', phase: "infra", needsTarget: true },
+
+            // ==========================================
+            // PHASE 5: DEEP DIVE (Targeted only now for safety)
+            // ==========================================
+            { title: "Laravel Ignition", desc: "Halaman debug Laravel.", query: 'intext:"Laravel Ignition" intext:"Share" -site:stackoverflow.com -site:github.com {target_keyword}', phase: "deep", needsTarget: true },
+            { title: "Spring Boot Actuators", desc: "Endpoint Java Spring sensitive.", query: 'inurl:"/actuator/env" OR inurl:"/actuator/heapdump" -site:github.com -site:stackoverflow.com {target_keyword}', phase: "deep", needsTarget: true },
+            { title: "PHP Info", desc: "File phpinfo().", query: 'ext:php intitle:"phpinfo()" "PHP Version" -site:stackoverflow.com -site:github.com {target_keyword}', phase: "deep", needsTarget: true },
+            { title: "Notion Internal", desc: "Halaman Notion internal.", query: 'site:notion.site ("employee handbook" OR "internal wiki" OR "onboarding") {target_keyword}', phase: "deep", needsTarget: true },
+            {
+                title: "Env File Leaks",
+                desc: "File .env terekspos (Global Safe).",
+                query: 'filetype:env "DB_PASSWORD" "APP_ENV" -site:github.com -site:stackoverflow.com',
+                phase: "deep", needsTarget: false // Confirmed Global Safe
+            },
+
+
+            // ==========================================
+            // GOD MODE (GLOBAL READY)
+            // ==========================================
+            { title: "Postman Leaks", desc: "Global Search: Token auth developer.", query: 'filetype:json inurl:"postman_collection" "token" {target_keyword}', phase: "phase4", needsTarget: false },
+            { title: "DB Dumps (SQL)", desc: "Global: Dump database users.", query: 'filetype:sql "INSERT INTO" "users" "password" {target_keyword}', phase: "phase4", needsTarget: false },
+            { title: "Docker Secrets", desc: "Global: Root DB passwords.", query: 'filetype:yml "docker-compose" "MYSQL_ROOT_PASSWORD" -site:github.com {target_keyword}', phase: "phase4", needsTarget: false }
+        ];
+
+        const targetInput = document.getElementById('targetInput');
+        const dorkList = document.getElementById('dorkList');
+        const filters = document.getElementById('categoryFilters');
+        let currentFilter = 'all';
+
+        function renderDorks() {
+            dorkList.innerHTML = '';
+            const target = targetInput.value.trim();
+            // Heuristic cleaning
+            let targetKeyword = "";
+            let isGlobal = (target === "");
+
+            if (!isGlobal) {
+                targetKeyword = target.split('.')[0];
+                if (target.includes('www.')) targetKeyword = target.split('.')[1] || targetKeyword;
+                const parts = target.split('.');
+                if (parts.length > 2) {
+                    if (parts[0] === 'www') targetKeyword = parts[1];
+                    else targetKeyword = parts[0];
+                }
+            }
+
+            let count = 0;
+
+            dorks.forEach(dork => {
+                if (currentFilter !== 'all' && dork.phase !== currentFilter) return;
+
+                // STRICT FILTERING: Hide dorks that NEED a target if we are in Global mode
+                if (isGlobal && dork.needsTarget) {
+                    return; // Do not render this card at all
+                }
+
+                let finalQuery = dork.query;
+
+                if (isGlobal) {
+                    finalQuery = finalQuery.replace(/{target_keyword}/g, "").replace(/site:{target}/g, "");
+                } else {
+                    finalQuery = finalQuery.replace(/{target}/g, target);
+                    if (targetKeyword) {
+                        finalQuery = finalQuery.replace(/{target_keyword}/g, `"${targetKeyword}"`);
+                    }
+                }
+
+                // Clean up any double spaces from removals
+                finalQuery = finalQuery.replace(/\s+/g, ' ').trim();
+
+                count++;
+
+                const card = document.createElement('div');
+                card.className = 'dork-card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="dork-title">${dork.title}</div>
+                        <div>
+                            ${isGlobal ? '<span class="badge global">Global</span>' : ''}
+                            <span class="badge ${dork.phase}">${getPhaseLabel(dork.phase)}</span>
+                        </div>
+                    </div>
+                    <div class="description">${dork.desc}</div>
+                    <div class="dork-query-box">${finalQuery}</div>
+                    <div class="card-actions">
+                        <button class="btn btn-copy" onclick="copyToClipboard(this, '${escapeJS(finalQuery)}')" >
+                            📋 Copy
+                        </button>
+                        <button class="btn btn-exec" onclick="executeDork('${escapeJS(finalQuery)}')" >
+                            🚀 Execute
+                        </button>
+                    </div>
+                `;
+                dorkList.appendChild(card);
+            });
+
+            if (count === 0) {
+                dorkList.innerHTML = '<div class="empty-state">' + (isGlobal ? 'No Global dorks available for this category. Enter a target domain to see more.' : 'No dorks found.') + '</div>';
+            }
+        }
+
+        function getPhaseLabel(phase) {
+            const labels = {
+                phase1: 'Discovery',
+                phase2: 'Recon',
+                gems: 'Hidden Gems',
+                phase3: 'Vuln',
+                infra: 'Infra [Refined]',
+                deep: 'Deep Dive [Refined]',
+                crypto: '🪙 Crypto/Web3',
+                phase4: 'GOD MODE'
+            };
+            return labels[phase] || phase;
+        }
+
+        function escapeJS(str) {
+            return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        function copyToClipboard(btn, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ Copied!';
+                btn.style.background = '#2ea043';
+                btn.style.color = '#fff';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = '';
+                    btn.style.color = '';
+                }, 1500);
+            });
+        }
+
+        function executeDork(query) {
+            const encoded = encodeURIComponent(query);
+            window.open(`https://www.google.com/search?q=${encoded}`, '_blank');
+        }
+
+        targetInput.addEventListener('keyup', renderDorks);
+        targetInput.addEventListener('change', renderDorks);
+
+        filters.addEventListener('click', (e) => {
+            if (e.target.classList.contains('filter-btn')) {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentFilter = e.target.getAttribute('data-filter');
+                renderDorks();
+            }
+        });
+
+        renderDorks();
+    </script>
+</body>
+
+</html>

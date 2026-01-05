@@ -1,0 +1,704 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punycode Guard Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.3);
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: #334155;
+            --glass: rgba(30, 41, 59, 0.7);
+        }
+
+        * {
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            background-image: radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 40px 0;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin: 0 0 10px 0;
+            background: linear-gradient(135deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Main Card */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .glass-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Input Area */
+        textarea {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: #fff;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            resize: vertical;
+            min-height: 100px;
+            transition: all 0.2s;
+        }
+
+        textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        /* Badge Pills */
+        .status-bar {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            opacity: 0.5;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .badge.active {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        .badge.green {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            border-color: rgba(34, 197, 94, 0.2);
+        }
+
+        .badge.green.active {
+            background: rgba(34, 197, 94, 0.2);
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
+        }
+
+        .badge.yellow {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        .badge.yellow.active {
+            background: rgba(245, 158, 11, 0.2);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+        }
+
+        .badge.red {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .badge.red.active {
+            background: rgba(239, 68, 68, 0.2);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+        }
+
+        /* Output Grid */
+        .output-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .output-box {
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 8px;
+            padding: 16px;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .output-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .code-block {
+            font-family: 'JetBrains Mono', monospace;
+            word-break: break-all;
+            color: var(--accent);
+            font-size: 0.95rem;
+            min-height: 24px;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--text-muted);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Variants Section */
+        .variants-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .variant-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .variant-chip:hover {
+            background: var(--accent);
+            color: #000;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        input[type="checkbox"] {
+            accent-color: var(--accent);
+            width: 18px;
+            height: 18px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🔐 Punycode Guard</h1>
+            <div class="subtitle">Secure Unicode to Punycode Converter & Homoglyph Detector</div>
+        </header>
+
+        <div class="glass-card">
+            <h2>1. Input & Analysis</h2>
+            <textarea id="input" autofocus placeholder="Enter domain (e.g., paypal.com) or text..."></textarea>
+
+            <div class="status-bar">
+                <div id="badge-ascii" class="badge green">✓ ASCII Safe</div>
+                <div id="badge-puny" class="badge yellow">⚠ Needs Punycode</div>
+                <div id="badge-homo" class="badge red">⚠ Homoglyphs Detected</div>
+            </div>
+
+            <div class="controls" style="margin-top: 20px;">
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="normalizeCheck" checked>
+                    <span>Normalize Homoglyphs</span>
+                </label>
+                <button onclick="document.getElementById('input').value=''; compute();"
+                    style="margin-left:auto; background:none; border:none; color:var(--text-muted); cursor:pointer; text-decoration:underline;">Clear</button>
+            </div>
+            <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 5px;">
+                Homoglyph detected: <span id="homoglyph-preview" style="font-family: monospace;">—</span>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h2>2. Conversion Results</h2>
+            <div class="output-grid">
+                <!-- Normalized -->
+                <div class="output-box">
+                    <span class="output-label">Normalized (Safe Base)</span>
+                    <div id="out-norm" class="code-block">—</div>
+                    <button class="copy-btn" onclick="copyText('out-norm')">📋</button>
+                </div>
+
+                <!-- Punycode Domain -->
+                <div class="output-box">
+                    <span class="output-label">Punycode (Domain)</span>
+                    <div id="out-puny-dom" class="code-block">—</div>
+                    <button class="copy-btn" onclick="copyText('out-puny-dom')">📋</button>
+                </div>
+
+                <!-- Unicode -->
+                <div class="output-box">
+                    <span class="output-label">Unicode (Resolved)</span>
+                    <div id="out-uni" class="code-block">—</div>
+                    <button class="copy-btn" onclick="copyText('out-uni')">📋</button>
+                </div>
+
+                <!-- Punycode String -->
+                <div class="output-box">
+                    <span class="output-label">Punycode (Raw String)</span>
+                    <div id="out-puny-str" class="code-block">—</div>
+                    <button class="copy-btn" onclick="copyText('out-puny-str')">📋</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h2>3. Homoglyph Confusion Generator</h2>
+            <p class="subtitle" style="margin-bottom: 20px;">Generates potential look-alikes that attackers might use.
+            </p>
+
+            <div class="controls">
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="keepTLD" checked>
+                    <span>Keep TLD Safe</span>
+                </label>
+                <select id="maxChanges"
+                    style="background:#0f172a; border:1px solid var(--border); color:#fff; padding:5px; border-radius:4px;">
+                    <option value="1">1 Change/label</option>
+                    <option value="2">2 Changes/label</option>
+                </select>
+                <button class="copy-btn" style="width: auto; padding: 0 12px; position:static;"
+                    onclick="copyVariants()">Copy List</button>
+            </div>
+
+            <div id="variants-container" class="variants-list">
+                <span style="color:var(--text-muted); width:100%; text-align:center; padding: 20px;">Enter a domain to
+                    see variants...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        //  LOGIC: Homoglyphs & Punycode (Ported)
+        // ==========================================
+
+        const homoglyphs_map = {
+            'a': ['à', 'á', 'â', 'ã', 'ä', 'å', 'ɑ', 'А', 'Α', 'Ꭺ', 'Ａ', '𝔄', '𝕬', '𝒜', '𝐀', '𝐴', '𝘈', '𝙰', '𝖠', '𝗔', '𝘼', '𝚨', '𝑨', 'ⓐ', 'Ⓐ', '🅐', '🅰', '𝔞', '𝖆', '𝒶', '𝗮', '𝘢'],
+            'b': ['Ь', 'Ꮟ', 'Ƅ', 'ᖯ', '𝐛', '𝑏', '𝒃', '𝓫', '𝔟', '𝕓', '𝖇', '𝗯', '𝘣', '𝙗', '𝚋'],
+            'c': ['ϲ', 'с', 'ƈ', 'ȼ', 'ḉ', 'ⲥ', '𝐜', '𝑐', '𝒄', '𝓬', '𝔠', '𝕔', '𝖈', '𝗰', '𝘤', '𝙘', '𝚌'],
+            'd': ['ԁ', 'ժ', 'Ꮷ', '𝐝', '𝑑', '𝒅', '𝓭', '𝔡', '𝕕', '𝖉', '𝗱', '𝘥', '𝙙', '𝚍'],
+            'e': ['е', 'ҽ', '℮', 'ḛ', 'ḝ', 'ẹ', 'é', 'è', 'ê', 'ë', 'ē', 'ė', 'ę', '𝐞', '𝑒', '𝒆', '𝓮', '𝔢', '𝕖', '𝖊', '𝗲', '𝘦', '𝙚', '𝚎'],
+            'f': ['ғ', '𝐟', '𝑓', '𝒇', '𝓯', '𝔣', '𝕗', '𝖋', '𝗳', '𝘧', '𝙛', '𝚏'],
+            'g': ['ɡ', 'ց', '𝐠', '𝑔', '𝒈', '𝓰', '𝔤', '𝕘', '𝖌', '𝗴', '𝘨', '𝙜', '𝚐'],
+            'h': ['һ', 'հ', 'Ꮒ', 'ℎ', '𝐡', '𝒉', '𝒽', '𝓱', '𝔥', '𝕙', '𝖍', '𝗵', '𝘩', '𝙝', '𝚑'],
+            'i': ['і', 'ɩ', 'Ꭵ', 'Ⅰ', 'ı', 'í', 'ì', 'î', 'ï', 'ī', 'į', '𝐢', '𝑖', '𝒊', '𝓲', '𝔦', '𝕚', '𝖎', '𝗶', '𝘪', '𝙞', '𝚒'],
+            'j': ['ј', 'ʝ', 'ϳ', '𝐣', '𝑗', '𝒋', '𝓳', '𝔧', '𝕛', '𝖏', '𝗷', '𝘫', '𝙟', '𝚓'],
+            'k': ['κ', '𝐤', '𝑘', '𝒌', '𝓴', '𝔨', '𝕜', '𝖐', '𝗸', '𝘬', '𝙠', '𝚔'],
+            'l': ['ⅼ', 'ӏ', 'Ɩ', 'ʟ', '𝐥', '𝑙', '𝒍', '𝓵', '𝔩', '𝕝', '𝖑', '𝗹', '𝙡', '𝚕'],
+            'm': ['м', 'ṃ', 'ᴍ', '𝐦', '𝑚', '𝒎', '𝓶', '𝔪', '𝕞', '𝖒', '𝗺', '𝘮', '𝙡', '𝚖'],
+            'n': ['ո', 'п', 'ռ', 'ṅ', 'ṇ', 'ṋ', '𝐧', '𝑛', '𝒏', '𝓷', '𝔫', '𝕟', '𝖓', '𝗻', '𝘯', '𝙣', '𝚗'],
+            'o': ['ο', 'օ', 'ӧ', 'ö', 'ó', 'ò', 'ô', 'õ', 'ō', 'ő', 'ⲟ', '𝐨', '𝑜', '𝓸', '𝔬', '𝕠', '𝖔', '𝗼', '𝘰', '𝙤', '𝚬'],
+            'p': ['р', 'ρ', '⍴', '𝐩', '𝑝', '𝒑', '𝓹', '𝔭', '𝕡', '𝖕', '𝗽', '𝘱', '𝙥', '𝚭'],
+            'q': ['զ', 'ԛ', 'գ', '𝐪', '𝑞', '𝒒', '𝓺', '𝔮', '𝕢', '𝖖', '𝗾', '𝘲', '𝙦', '𝚞'],
+            'r': ['ᴦ', 'г', 'ř', 'ȓ', 'ṛ', 'ⲅ', '𝐫', '𝑟', '𝒓', '𝓻', '𝔯', '𝕣', '𝖗', '𝗿', '𝘳', '𝙧', '𝚛'],
+            's': ['ѕ', 'ʂ', 'ṡ', 'ṣ', '𝐬', '𝑠', '𝒔', '𝓼', '𝔰', '𝕤', '𝖘', '𝘴', '𝙨', '𝚜'],
+            't': ['т', 'τ', 'ṭ', 'ț', 'ⲧ', '𝐭', '𝑡', '𝒕', '𝓽', '𝔱', '𝕥', '𝖙', '𝘵', '𝙩', '𝚝'],
+            'u': ['υ', 'ս', 'ü', 'ú', 'ù', 'û', 'ū', 'ⲩ', '𝐮', '𝑢', '𝒖', '𝓾', '𝔲', '𝕦', '𝖚', '𝘶', '𝙪', '𝚞'],
+            'v': ['ν', 'ѵ', 'ⴸ', '𝐯', '𝑣', '𝒗', '𝓿', '𝔳', '𝕧', '𝖛', '𝗏', '𝘷', '𝙫', '𝚟'],
+            'w': ['ԝ', 'ա', 'ѡ', 'ⲱ', '𝐰', '𝑤', '𝒘', '𝔀', '𝕨', '𝖜', '𝗐', '𝘸', '𝙬', '𝚠'],
+            'x': ['х', 'ҳ', 'ӿ', '𝐱', '𝑥', '𝒙', '𝔁', '𝕩', '𝖝', '𝗑', '𝘹', '𝙭', '𝚡'],
+            'y': ['у', 'ү', 'ӯ', 'ý', 'ÿ', 'ⲩ', '𝐲', '𝑦', '𝒚', '𝔂', '𝕪', '𝖞', '𝗒', '𝘺', '𝙮', '𝚣'],
+            'z': ['ᴢ', 'ż', 'ź', 'ž', '𝐳', '𝑧', '𝒛', '𝔃', '𝕫', '𝖟', '𝗓', '𝘻', '𝙯', '𝚣'],
+            '0': ['０', '𝟎', '⓪', '🄌'],
+            '1': ['１', '𝟏', '①', '🄁'],
+            '2': ['２', '𝟐', '②', '🄂'],
+            '3': ['３', '𝟑', '③', '🄃'],
+            '4': ['４', '𝟒', '④', '🄄'],
+            '5': ['５', '𝟓', '⑤', '🄅'],
+            '6': ['６', '𝟔', '⑥', '🄆'],
+            '7': ['７', '𝟕', '⑦', '🄇'],
+            '8': ['８', '𝟖', '⑧', '🄈'],
+            '9': ['９', '𝟗', '⑨', '🄉'],
+            '@': ['＠', '🄰'],
+            '.': ['．', '。'],
+            '-': ['－', '-']
+        };
+        const reverse = new Map();
+        for (const base in homoglyphs_map) {
+            for (const ch of homoglyphs_map[base]) reverse.set(ch, base);
+        }
+
+        // --- Punycode Basics ---
+        const base = 36, tmin = 1, tmax = 26, skew = 38, damp = 700, initial_bias = 72, initial_n = 128, delimiter = '-';
+        const d2 = (n) => n < 26 ? String.fromCharCode(n + 97) : String.fromCharCode(n - 26 + 48);
+        function adapt(delta, numpoints, firstTime) { delta = firstTime ? Math.floor(delta / damp) : delta >> 1; delta += Math.floor(delta / numpoints); let k = 0; while (delta > (((base - tmin) * tmax) >> 1)) { delta = Math.floor(delta / (base - tmin)); k += base; } return k + Math.floor((base - tmin + 1) * delta / (delta + skew)); }
+        function ucs2decode(str) { const out = []; let i = 0; while (i < str.length) { const a = str.charCodeAt(i++); if (a >= 0xD800 && a <= 0xDBFF && i < str.length) { const b = str.charCodeAt(i); if ((b & 0xFC00) === 0xDC00) { i++; out.push(((a - 0xD800) << 10) + (b - 0xDC00) + 0x10000); continue; } } out.push(a); } return out; }
+        function digitToVal(code) { if (code - 48 < 10) return code - 22; if (code - 65 < 26) return code - 65; if (code - 97 < 26) return code - 97; return base; }
+
+        function encodePunycode(input) {
+            const cps = ucs2decode(input); let n = initial_n, delta = 0, bias = initial_bias;
+            const output = []; const basic = [];
+            for (const cp of cps) { if (cp < 0x80) basic.push(String.fromCharCode(cp)); }
+            output.push(...basic); let handled = basic.length; if (handled) output.push(delimiter);
+            const total = cps.length;
+            while (handled < total) {
+                let m = Number.MAX_SAFE_INTEGER; for (const cp of cps) { if (cp >= n && cp < m) m = cp; }
+                delta += (m - n) * (handled + 1); n = m;
+                for (const cp of cps) {
+                    if (cp < n) { delta++; if (delta === Number.MAX_SAFE_INTEGER) throw new Error('overflow'); }
+                    if (cp === n) {
+                        let q = delta;
+                        for (let k = base; ; k += base) {
+                            const t = k <= bias ? tmin : (k >= bias + tmax ? tmax : k - bias);
+                            if (q < t) { output.push(d2(q)); break; }
+                            const code = t + (q - t) % (base - t);
+                            output.push(d2(code));
+                            q = Math.floor((q - t) / (base - t));
+                        }
+                        bias = adapt(delta, handled + 1, handled === basic.length);
+                        delta = 0; handled++;
+                    }
+                }
+                delta++; n++;
+            }
+            const out = output.join("");
+            return out.startsWith(delimiter) ? out.slice(1) : out;
+        }
+
+        function decodePunycode(input) {
+            let n = initial_n, i = 0, bias = initial_bias, output = [];
+            const dPos = input.lastIndexOf(delimiter); let idx = 0;
+            if (dPos > -1) { for (; idx < dPos; idx++) output.push(input.charCodeAt(idx)); idx++; }
+            while (idx < input.length) {
+                let oldi = i, w = 1;
+                for (let k = base; ; k += base) {
+                    if (idx >= input.length) throw new Error('bad-input');
+                    const digit = digitToVal(input.charCodeAt(idx++));
+                    if (digit >= base) throw new Error('bad-input');
+                    i += digit * w;
+                    const t = k <= bias ? tmin : (k >= bias + tmax ? tmax : k - bias);
+                    if (digit < t) break; w *= (base - t);
+                }
+                const outPos = output.length + 1;
+                bias = adapt(i - oldi, outPos, oldi === 0);
+                n += Math.floor(i / outPos);
+                i = i % outPos;
+                output.splice(i, 0, n); i++;
+            }
+            return String.fromCodePoint(...output);
+        }
+
+        function toASCII(domain) { return domain.split('.').map(lbl => { if (lbl === '') return ''; const nonASCII = /[^\x00-\x7F]/.test(lbl); return nonASCII ? 'xn--' + encodePunycode(lbl) : lbl; }).join('.'); }
+        function toUnicode(domain) { return domain.split('.').map(lbl => lbl.toLowerCase().startsWith('xn--') ? decodePunycode(lbl.slice(4)) : lbl).join('.'); }
+
+        // --- Variants Generator ---
+        function homoglyphChoices(ch) {
+            const lower = ch.toLowerCase();
+            const arr = homoglyphs_map[lower];
+            if (!arr) return [];
+            const set = new Set(arr.filter(g => g !== ch));
+            return [...set];
+        }
+
+        function generateLabelVariants(label, maxChanges) {
+            const results = new Set();
+            const seen = new Set([label]);
+            const queue = [{ str: label, idx: 0, changes: 0 }];
+            while (queue.length) {
+                const { str, idx, changes } = queue.shift();
+                if (changes > 0) results.add(str);
+                if (changes >= maxChanges) continue;
+                const chars = [...str];
+                for (let i = idx; i < chars.length; i++) {
+                    const choices = homoglyphChoices(chars[i]);
+                    if (!choices.length) continue;
+                    for (const g of choices) {
+                        const next = [...chars]; next[i] = g;
+                        const out = next.join('');
+                        if (!seen.has(out)) { seen.add(out); queue.push({ str: out, idx: i + 1, changes: changes + 1 }); }
+                    }
+                }
+            }
+            return [...results];
+        }
+
+        function generateDomainVariants(domain, maxChanges, limit, keepTLD) {
+            domain = domain.trim();
+            if (!domain || !/^[^\s]+\.[^\s]+$/.test(domain)) return [];
+            const labels = domain.split('.');
+            let tld = "";
+            let workingLabels = labels;
+            if (labels.length > 1) {
+                tld = labels.pop();
+                if (!keepTLD) {
+                    workingLabels = [...labels, tld];
+                    tld = "";
+                }
+            }
+
+            const parts = workingLabels.map(lbl => [lbl, ...generateLabelVariants(lbl, maxChanges)]);
+            const combined = new Set();
+            function backtrack(i, acc) {
+                if (combined.size >= limit) return;
+                if (i === parts.length) {
+                    let full = acc.join('.');
+                    if (tld) full += '.' + tld;
+                    if (full !== domain) combined.add(full);
+                    return;
+                }
+                for (const p of parts[i]) {
+                    if (combined.size >= limit) break;
+                    acc.push(p);
+                    backtrack(i + 1, acc);
+                    acc.pop();
+                }
+            }
+            backtrack(0, []);
+            return [...combined].slice(0, limit);
+        }
+
+        // ==========================================
+        //  UI LOGIC
+        // ==========================================
+        const el = (id) => document.getElementById(id);
+        const $in = el('input');
+        const $normCheck = el('normalizeCheck');
+        const $bAscii = el('badge-ascii');
+        const $bPuny = el('badge-puny');
+        const $bHomo = el('badge-homo');
+        const $prevHomo = el('homoglyph-preview');
+
+        function normalizeHomoglyphs(s) { let out = ''; for (const ch of s) { out += reverse.get(ch) ?? ch; } return out; }
+        function highlightHomoglyphs(s) {
+            let out = '';
+            let found = false;
+            for (const ch of s) {
+                if (reverse.has(ch)) {
+                    out += `<span style="color:var(--danger); font-weight:bold;">${ch}</span>`;
+                    found = true;
+                } else {
+                    out += ch;
+                }
+            }
+            return found ? out : 'None';
+        }
+
+        function compute() {
+            let v = $in.value.trim();
+
+            // Health Checks
+            const hasNonASCII = /[^\x00-\x7F]/.test(v);
+            const hasHomo = [...v].some(ch => reverse.has(ch));
+
+            $bAscii.className = hasNonASCII ? 'badge green' : 'badge green active';
+            $bPuny.className = hasNonASCII ? 'badge yellow active' : 'badge yellow';
+            $bHomo.className = hasHomo ? 'badge red active' : 'badge red';
+
+            $prevHomo.innerHTML = highlightHomoglyphs(v);
+
+            // Normalize
+            const normalized = $normCheck.checked ? normalizeHomoglyphs(v) : v;
+            el('out-norm').textContent = normalized || '—';
+
+            // Punycode
+            let punyDom = '—', punyStr = '—';
+            if (normalized) {
+                try {
+                    punyDom = toASCII(normalized);
+                    punyStr = 'xn--' + encodePunycode(normalized);
+                } catch (e) { punyDom = 'Error'; }
+            }
+            el('out-puny-dom').textContent = punyDom;
+            el('out-puny-str').textContent = punyStr;
+
+            // Unicode
+            let uni = '—';
+            try {
+                if (/(^|\.)xn--/i.test(v)) uni = toUnicode(v);
+                else if (/(^|\.)xn--/i.test(punyDom)) uni = toUnicode(punyDom);
+            } catch (e) { uni = 'Error'; }
+            el('out-uni').textContent = uni;
+
+            // Variants
+            renderVariants(normalized);
+        }
+
+        function renderVariants(domain) {
+            const container = el('variants-container');
+            if (!domain || !/^[^\s]+\.[^\s]+$/.test(domain)) {
+                container.innerHTML = '<span style="color:var(--text-muted); width:100%; text-align:center; padding: 20px;">Enter a valid domain to generate variants...</span>';
+                return;
+            }
+
+            const maxC = parseInt(el('maxChanges').value);
+            const keep = el('keepTLD').checked;
+            const vars = generateDomainVariants(domain, maxC, 100, keep);
+
+            if (vars.length === 0) {
+                container.innerHTML = '<span style="color:var(--text-muted); width:100%; text-align:center; padding: 20px;">No obvious homoglyph variants found.</span>';
+                return;
+            }
+
+            container.innerHTML = '';
+            vars.forEach(v => {
+                const chip = document.createElement('div');
+                chip.className = 'variant-chip';
+                chip.textContent = v;
+                chip.onclick = () => copyTextStr(v);
+                container.appendChild(chip);
+            });
+        }
+
+        function copyText(id) {
+            const text = el(id).textContent;
+            if (text === '—') return;
+            copyTextStr(text);
+        }
+
+        function copyTextStr(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Toast or feedback could go here
+                // For now, simplicity
+            });
+        }
+
+        function copyVariants() {
+            const container = el('variants-container');
+            const chips = container.querySelectorAll('.variant-chip');
+            if (chips.length === 0) return;
+            const text = Array.from(chips).map(c => c.textContent).join('\n');
+            copyTextStr(text);
+        }
+
+        // Listeners
+        $in.addEventListener('input', compute);
+        $normCheck.addEventListener('change', compute);
+        el('keepTLD').addEventListener('change', compute);
+        el('maxChanges').addEventListener('change', compute);
+
+        // Init
+        $in.value = 'paypal.com';
+        compute();
+
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"db923f8a6b4a4d60a153020dd1e2d299","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+
+</html>
