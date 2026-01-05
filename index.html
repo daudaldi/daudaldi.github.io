@@ -1,437 +1,727 @@
-<!doctype html>
-<html lang="id">
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Public Tools Dashboard</title>
-<style>
-  :root{
-    --bg:#f7f9fc; --panel:#ffffff; --muted:#6b7280; --text:#0f172a; --border:#e5e7eb;
-    --pri:#2563eb; --pri-weak:#e8f0ff; --ok:#16a34a; --warn:#f59e0b;
-    --grad:linear-gradient(135deg,#eff4ff, #fdf7ff 60%);
-    --shadow:0 10px 30px rgba(17,24,39,.08);
-    --header-h: 64px; /* tinggi header untuk perhitungan tinggi konten */
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Public Tools | Daud Aldumy</title>
+  <meta name="description"
+    content="Cybersecurity & Privacy Tools by Daud Aldumy. Secure, client-side, and privacy-focused utilities." />
 
-  /* HEADER */
-  header{
-    position:sticky;top:0;z-index:10;
-    display:flex;align-items:center;gap:12px;
-    height:var(--header-h);
-    padding:0 18px;
-    background:var(--panel);border-bottom:1px solid var(--border);
-  }
-  .brand{font-weight:800;letter-spacing:.2px}
-  .repo{color:var(--muted);font-size:14px}
-  .actions{margin-left:auto;display:flex;gap:8px}
-  .actions button{padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--panel);cursor:pointer;transition:transform .05s ease}
-  .actions button:active{transform:scale(.98)}
-  .actions .primary{background:var(--pri);border-color:var(--pri);color:#fff}
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
 
-  /* LAYOUT APP */
-  .app{
-    display:flex;gap:16px;
-    /* gunakan tinggi viewport aktual (termasuk mobile browser chrome) */
-    height:calc(100dvh - var(--header-h));
-    padding:16px;
-  }
-  aside{
-    width:360px;max-width:94vw;
-    background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:12px;
-    box-shadow:var(--shadow);
-    display:flex;flex-direction:column;min-height:0;
-  }
-  main{
-    flex:1;display:flex;min-width:0;min-height:0; /* penting agar child flex bisa mengisi tinggi */
-  }
+  <style>
+    :root {
+      /* Light Mode Tokens */
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-glow: rgba(37, 99, 235, 0.1);
+      --accent: #0ea5e9;
+      --success: #10b981;
+      --card-hover: #f1f5f9;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+      --font-head: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
 
-  /* SIDEBAR */
-  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:10px}
-  input[type="text"]{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;font:inherit}
+    [data-theme="dark"] {
+      /* Dark Mode Tokens */
+      --bg: #020617;
+      --panel: #0f172a;
+      --border: #1e293b;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-glow: rgba(59, 130, 246, 0.15);
+      --accent: #38bdf8;
+      --success: #34d399;
+      --card-hover: #1e293b;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    }
 
-  .list{
-    display:flex;flex-direction:column;gap:10px;
-    /* isi sisa tinggi sidebar */
-    overflow:auto;min-height:0;flex:1;
-    padding-right:2px;
-  }
-  .tool{
-    background:#fff;border:1px solid var(--border);border-radius:14px;
-    padding:10px 12px;display:flex;align-items:center;gap:10px;
-    box-shadow:0 1px 0 rgba(0,0,0,.02);cursor:pointer;
-    transition:box-shadow .15s ease,border-color .15s ease
-  }
-  .tool:hover{box-shadow:0 6px 16px rgba(15,23,42,.06);border-color:#dee3ea}
-  .tool .icon{width:34px;height:34px;border-radius:10px;background:var(--pri-weak);display:grid;place-items:center;color:var(--pri);font-weight:700}
-  .tool .meta{flex:1;min-width:0}
-  .tool .name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tool .url{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .btn{padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
-  .btn.ghost{background:#fff}
+    * {
+      box-sizing: border-box;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-  .tiny{font-size:12px;color:#64748b;margin-top:8px}
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text-main);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      transition: background 0.3s ease, color 0.3s ease;
+      overflow: hidden;
+      /* App-like feel */
+    }
 
-  /* PANEL KANAN (iframe full-height) */
-  .panel{
-    background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);
-    display:flex;flex-direction:column; /* ini kunci */
-    width:100%;min-width:0;min-height:0; /* penting */
-  }
-  .topbar{
-    flex:0 0 auto; /* jangan melar */
-    display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--border)
-  }
-  .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;font-weight:600;font-size:12px}
+    /* --- Header --- */
+    header {
+      height: 64px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      z-index: 50;
+      transition: border-color 0.3s ease, background 0.3s ease;
+    }
 
-  iframe{
-    flex:1 1 auto; /* isi semua sisa tinggi panel */
-    width:100%;
-    min-height:0; /* biar boleh lebih kecil dari konten internal */
-    border:0;background:#fff;display:block;
-  }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
 
-  /* ABOUT (hero + cards) */
-  .about{background:var(--panel)}
-  .hero{padding:28px;background:var(--grad);border-bottom:1px solid var(--border)}
-  .hero h1{margin:0 0 8px 0;font-size:26px}
-  .hero p{margin:0;color:#475569}
-  .hero .dots{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-  .dot{font-size:12px;color:#334155;padding:6px 10px;border-radius:999px;background:#ffffffa6;border:1px solid #e6ecff}
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 1.1rem;
+    }
 
-  .about-body{padding:16px}
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:12px}
-  .card{border:1px solid var(--border);border-radius:14px;padding:14px;background:#fff}
-  .card h3{margin:0 0 6px 0;font-size:16px}
-  .card p{margin:6px 0 0 0;color:#64748b;font-size:14px}
-  .grid-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:8px}
-  .tcard{border:1px solid var(--border);border-radius:12px;padding:12px;background:#fff}
-  .tcard .tname{font-weight:700;margin-bottom:4px}
-  .muted{color:var(--muted)}
+    .theme-toggle {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: 1.2rem;
+      transition: all 0.2s;
+    }
 
-  /* RESPONSIVE: sidebar di atas untuk layar kecil */
-  @media (max-width: 980px){
-    .app{flex-direction:column;height:calc(100dvh - var(--header-h));}
-    aside{width:100%}
-  }
-</style>
+    .theme-toggle:hover {
+      color: var(--primary);
+      border-color: var(--primary);
+      background: var(--primary-glow);
+    }
+
+    /* --- Main Layout --- */
+    .layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* --- Sidebar --- */
+    aside {
+      width: 320px;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 40;
+    }
+
+    .search-box {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .tool-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 16px 16px;
+      /* Padding bottom for scroll */
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      /* Tighter gap */
+    }
+
+    .tool-category {
+      padding: 20px 8px 8px 8px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-family: var(--font-head);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tool-category::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      opacity: 0.5;
+    }
+
+    .tool-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .tool-item:hover {
+      background: var(--card-hover);
+    }
+
+    .tool-item.active {
+      background: var(--primary-glow);
+      border-color: rgba(37, 99, 235, 0.1);
+    }
+
+    .tool-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      display: grid;
+      place-items: center;
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+
+    .tool-item.active .tool-icon {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .tool-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tool-name {
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: var(--text-main);
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* --- Content Area --- */
+    main {
+      flex: 1;
+      position: relative;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .content-header {
+      padding: 16px 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .content-title {
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text-main);
+    }
+
+    .action-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text-main);
+    }
+
+    .action-btn:hover {
+      background: var(--card-hover);
+      border-color: var(--text-muted);
+    }
+
+    .action-btn.primary {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .action-btn.primary:hover {
+      background: #1d4ed8;
+      /* darker blue */
+    }
+
+    /* --- Iframe & About --- */
+    .frame-container {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      background: var(--bg);
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    .about-section {
+      padding: 40px;
+      max-width: 1000px;
+      margin: 0 auto;
+      overflow-y: auto;
+      height: 100%;
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      font-family: var(--font-head);
+      font-size: 2rem;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Mobile Utility */
+    .mobile-menu-btn {
+      display: none;
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      aside {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        box-shadow: 20px 0 50px rgba(0, 0, 0, 0.3);
+      }
+
+      aside.open {
+        transform: translateX(0);
+      }
+
+      .mobile-menu-btn {
+        display: block;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<header>
-  <div class="brand">🧭 Public Tools Dashboard</div>
-  <div class="repo" id="repoLabel">loading…</div>
-  <div class="actions">
-    <button id="btnRefresh" class="primary" title="Reload daftar tools">Refresh</button>
-    <button id="btnShare" class="actions" title="Copy link tool aktif">Share</button>
+
+  <header>
+    <div class="brand">
+      <button class="mobile-menu-btn" id="menuToggle">☰</button>
+      <div class="brand-icon">D</div>
+      <span>Public Tools</span>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <button class="action-btn" id="btnShare" title="Share Link">
+        <span>🔗</span> Share
+      </button>
+      <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
+        ☀
+      </button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div class="search-box">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search tools...">
+      </div>
+      <div class="tool-list" id="toolList">
+        <!-- Tools injected here -->
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main>
+      <!-- Overlay for mobile sidebar -->
+      <div id="overlay" style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.5); z-index:30;"
+        onclick="toggleSidebar()"></div>
+
+      <div class="content-header" id="contentHeader">
+        <div class="content-title" id="pageTitle">Welcome</div>
+        <div style="display:flex; gap:8px;">
+          <button class="action-btn" id="btnRefresh" title="Refresh List">↻ Sync</button>
+          <button class="action-btn primary" id="btnOpenExternal" disabled>Open New Tab ↗</button>
+        </div>
+      </div>
+
+      <div class="frame-container">
+        <!-- About Section -->
+        <div id="aboutSection" class="about-section">
+          <div style="max-width: 600px; margin: 60px auto; text-align: center;">
+            <div class="profile-avatar"
+              style="width: 100px; height: 100px; font-size: 2.5rem; margin: 0 auto 24px auto; box-shadow: var(--shadow-lg);">
+              DA</div>
+
+            <h1 style="font-family: var(--font-head); font-size: 2rem; margin: 0 0 8px 0; color: var(--text-main);">Daud
+              Aldumy</h1>
+
+            <div
+              style="display:inline-block; background: var(--primary-glow); color: var(--primary); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 24px;">
+              Cybersecurity Engineer · AppSec Specialist
+            </div>
+
+            <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.6; margin-bottom: 32px;">
+              Specializing in Red Teaming and Bug Bounty Hunting. <br>
+              This dashboard hosts my personal collection of client-side security utilities designed for privacy and
+              reconnaissance.
+            </p>
+
+            <div style="display: flex; gap: 12px; justify-content: center;">
+              <a href="https://me.daudaldi.my.id/" target="_blank" class="action-btn">🌐 Portfolio</a>
+              <a href="https://github.com/mrdzer0" target="_blank" class="action-btn">🐙 GitHub</a>
+              <a href="https://linkedin.com/in/daudaldi" target="_blank" class="action-btn">💼 LinkedIn</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Iframe for Tools -->
+        <iframe id="toolFrame" style="display:none;"></iframe>
+      </div>
+    </main>
   </div>
-</header>
 
-<div class="app">
-  <!-- Sidebar -->
-  <aside>
-    <div class="toolbar">
-      <input id="q" type="text" placeholder="Cari tool…" />
-    </div>
+  <script>
+    // --- Configuration ---
+    const CONFIG = {
+      OWNER: "daudaldi",
+      REPO: "daudaldi.github.io"
+    };
 
-    <div class="list" id="list"></div>
+    // --- State ---
+    const state = {
+      tools: [],
+      currentId: 'about',
+      theme: localStorage.getItem('theme') || 'light'
+    };
 
-    <div class="tiny">
-      • Letakkan file HTML di <code>tools/</code> (kecuali <code>index.html</code>).<br>
-      • Klik <b>Refresh</b> setelah menambah file.
-    </div>
-  </aside>
+    // --- Elements ---
+    const $ = id => document.getElementById(id);
+    const els = {
+      body: document.body,
+      themeBtn: $('themeToggle'),
+      list: $('toolList'),
+      searchInput: $('searchInput'),
+      sidebar: $('sidebar'),
+      overlay: $('overlay'),
+      about: $('aboutSection'),
+      frame: $('toolFrame'),
+      headerTitle: $('pageTitle'),
+      btnOpen: $('btnOpenExternal'),
+      btnRefresh: $('btnRefresh')
+    };
 
-  <!-- Main -->
-  <main>
-    <div class="panel">
-      <div class="topbar">
-        <div id="currentTitle" class="badge">About this dashboard</div>
-        <div id="currentDesc" class="muted"></div>
-        <div style="margin-left:auto;display:flex;gap:8px">
-          <button id="openTool" class="btn ghost" disabled>Open in new tab</button>
-          <button id="reloadTool" class="btn ghost" disabled>Reload</button>
-        </div>
-      </div>
+    // --- Theme Logic ---
+    function initTheme() {
+      els.body.setAttribute('data-theme', state.theme);
+      updateThemeIcon();
+      updateIframeTheme();
+    }
 
-      <!-- About (default) -->
-      <section id="about" class="about">
-        <div class="hero">
-          <h1>Alat Publik untuk Cek Data & Melindungi PII</h1>
-          <p>Semua berjalan di browser kamu — cepat, ringan, dan tidak mengirim data ke server.</p>
-          <div class="dots">
-            <span class="dot">🔒 Client-side privacy</span>
-            <span class="dot">⚡ Gratis & terbuka</span>
-            <span class="dot">🧩 Mini-tools praktis</span>
-          </div>
-        </div>
-        <div class="about-body">
-          <div class="cards">
-            <div class="card">
-              <h3>🎯 Tujuan</h3>
-              <p>Menyediakan alat sederhana untuk identifikasi data publik (NIK, plat nomor) dan perlindungan dokumen (watermark PII) demi literasi digital yang lebih aman.</p>
+    function toggleTheme() {
+      state.theme = state.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('theme', state.theme);
+      els.body.setAttribute('data-theme', state.theme);
+      updateThemeIcon();
+      updateIframeTheme();
+    }
+
+    function updateThemeIcon() {
+      els.themeBtn.innerHTML = state.theme === 'light' ? '☀' : '🌙';
+    }
+
+    function updateIframeTheme() {
+      if (els.frame && els.frame.contentWindow) {
+        els.frame.contentWindow.postMessage({ type: 'theme', theme: state.theme }, '*');
+      }
+    }
+
+    els.frame.onload = updateIframeTheme;
+
+    // --- Discovery Logic ---
+    async function fetchTools() {
+      els.btnRefresh.innerHTML = '...';
+
+      let fetchedTools = [];
+      // Hardcoded local tools to ensure they always appear
+      const localTools = [
+        { id: 'dork_generator.html', name: 'Dork Generator', url: 'tools/dork_generator.html', category: 'Infosec Support', icon: '🔍' },
+        { id: 'punycode_pro.html', name: 'Punycode Pro', url: 'tools/punycode_pro.html', category: 'Infosec Support', icon: '🌐' }
+      ];
+
+      try {
+        if (CONFIG.OWNER) {
+          const api = `https://api.github.com/repos/${CONFIG.OWNER}/${CONFIG.REPO}/contents/tools?ref=main`;
+          const res = await fetch(api);
+
+          if (res.ok) {
+            const files = await res.json();
+            fetchedTools = files
+              .filter(f => f.name.endsWith('.html') && f.name !== 'index.html')
+              .map(f => ({
+                id: f.name,
+                name: formatName(f.name),
+                url: `tools/${f.name}`,
+                category: categorize(f.name),
+                icon: getIcon(f.name)
+              }));
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      // Merge strategies (using a Map to deduplicate by ID)
+      const toolsMap = new Map();
+
+      // Add API tools first
+      fetchedTools.forEach(t => toolsMap.set(t.id, t));
+
+      // Add/Override local tools (ensure they exist and have correct categories)
+      localTools.forEach(t => toolsMap.set(t.id, t));
+
+      // Fallback checks
+      if (toolsMap.size === 0) {
+        [
+          { id: 'nik.html', name: 'Identity (NIK) Parser', url: 'tools/nik.html', category: 'Citizen Utilities', icon: '🪪' },
+          { id: 'nopol.html', name: 'Plate Number', url: 'tools/nopol.html', category: 'Citizen Utilities', icon: '🚗' },
+          { id: 'watermark.html', name: 'Secure Watermark', url: 'tools/watermark.html', category: 'Citizen Utilities', icon: '©' },
+          ...localTools
+        ].forEach(t => toolsMap.set(t.id, t));
+      }
+
+      state.tools = Array.from(toolsMap.values());
+
+      // Re-categorize everything to be safe
+      state.tools.forEach(t => {
+        if (!t.category) t.category = categorize(t.id);
+      });
+
+      renderList();
+      els.btnRefresh.innerHTML = '↻ Sync';
+
+      // Check URL param
+      const params = new URLSearchParams(window.location.search);
+      const toolId = params.get('id');
+      if (toolId) selectTool(toolId);
+    }
+
+    function formatName(filename) {
+      return filename
+        .replace('.html', '')
+        .replace(/_/g, ' ')
+        .replace(/-/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function categorize(filename) {
+      const n = filename.toLowerCase();
+      if (n.includes('dork') || n.includes('puny') || n.includes('recon') || n.includes('scan')) return 'Infosec Support';
+      if (n.includes('nik') || n.includes('nopol') || n.includes('watermark') || n.includes('id')) return 'Citizen Utilities';
+      return 'Other Tools';
+    }
+
+    function getIcon(filename) {
+      const n = filename.toLowerCase();
+      if (n.includes('dork')) return '🔍';
+      if (n.includes('puny') || n.includes('idn')) return '🌐';
+      if (n.includes('nik') || n.includes('identity')) return '🪪';
+      if (n.includes('watermark')) return '©';
+      if (n.includes('nopol') || n.includes('plate')) return '🚗';
+      return '🔧';
+    }
+
+    // --- Rendering ---
+    function renderList() {
+      els.list.innerHTML = '';
+
+      // 1. Dashboard / About (Always Top)
+      const aboutItem = createToolItem({ id: 'about', name: 'About & Profile', icon: '👤' });
+      els.list.appendChild(aboutItem);
+
+      // 2. Group Tools by Category
+      const searchTerm = els.searchInput.value.toLowerCase();
+      const grouped = {};
+
+      state.tools.forEach(t => {
+        if (t.name.toLowerCase().includes(searchTerm)) {
+          if (!grouped[t.category]) grouped[t.category] = [];
+          grouped[t.category].push(t);
+        }
+      });
+
+      // 3. Render Groups (Order: Infosec Support, Citizen Utilities, Other)
+      const order = ['Infosec Support', 'Citizen Utilities', 'Other Tools'];
+      const categories = Object.keys(grouped).sort((a, b) => {
+        let ia = order.indexOf(a);
+        let ib = order.indexOf(b);
+        if (ia === -1) ia = 99;
+        if (ib === -1) ib = 99;
+        return ia - ib;
+      });
+
+      categories.forEach(cat => {
+        // Category Header
+        const header = document.createElement('div');
+        header.className = 'tool-category';
+        header.innerText = cat;
+        els.list.appendChild(header);
+
+        // Items in Category
+        grouped[cat].forEach(tool => {
+          els.list.appendChild(createToolItem(tool));
+        });
+      });
+
+      if (state.tools.length > 0 && Object.keys(grouped).length === 0) {
+        els.list.innerHTML += '<div style="padding:20px; text-align:center; color:var(--text-muted)">No tools found</div>';
+      }
+    }
+
+    function createToolItem(tool) {
+      const div = document.createElement('div');
+      div.className = `tool-item ${state.currentId === tool.id ? 'active' : ''}`;
+      div.onclick = () => selectTool(tool.id);
+
+      div.innerHTML = `
+            <div class="tool-icon">${tool.icon || '🔧'}</div>
+            <div class="tool-info">
+                <div class="tool-name">${tool.name}</div>
             </div>
-            <div class="card">
-              <h3>👤 About Creator</h3>
-              <p id="aboutCreator">Dibuat oleh <b>Creator</b>. Ganti teks ini di CONFIG untuk menampilkan nama & tautan (GitHub/LinkedIn/Email).</p>
-            </div>
-            <div class="card">
-              <h3>🤝 Support & Dukungan</h3>
-              <p>Kirim saran/ide lewat GitHub Issues, dan dukung via Saweria/Trakteer. Berbagi tautan ini juga sudah membantu banyak!</p>
-            </div>
-            <div class="card">
-              <h3>🛡️ Privasi & Disclaimer</h3>
-              <p>Semua pemrosesan dilakukan <i>client-side</i>. Informasi bersifat edukatif & informatif, bukan untuk keperluan administratif/resmi.</p>
-            </div>
-          </div>
+        `;
+      return div;
+    }
 
-          <div style="margin-top:18px">
-            <h3 style="margin:0 0 8px 0">🔧 Tools yang Tersedia</h3>
-            <div id="aboutTools" class="grid-tools"></div>
-            <div class="tiny" id="aboutToolsNote">Menampilkan 6 tool terbaru (jika ada).</div>
-          </div>
+    function selectTool(id) {
+      state.currentId = id;
+      renderList(); // Re-render active state
 
-          <div class="tiny" style="margin-top:12px">
-            Versi: <span id="ver">1.0.0</span> · Update: <span id="upd">Nov 2025</span>
-          </div>
-        </div>
-      </section>
+      // Close mobile sidebar
+      els.sidebar.classList.remove('open');
+      els.overlay.style.display = 'none';
 
-      <!-- Iframe preview (now truly full-height) -->
-      <iframe id="frame" hidden sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
-    </div>
-  </main>
-</div>
+      // Update URL
+      const url = new URL(window.location);
+      if (id === 'about') {
+        url.searchParams.delete('id');
+        els.about.style.display = 'block';
+        els.frame.style.display = 'none';
+        els.headerTitle.innerText = "Welcome";
+        els.btnOpen.disabled = true;
+      } else {
+        const tool = state.tools.find(t => t.id === id);
+        if (!tool) return; // Error handling
 
-<script>
-/* ===========================
-   CONFIG — ubah sesuai repo
-=========================== */
-let CONFIG = {
-  OWNER: "",          // contoh: "username"
-  REPO:  "",          // contoh: "repo"
-  CREATOR_HTML: "Dibuat oleh <b>Creator</b> · <a class='link' href='#' target='_blank'>portfolio</a>"
-};
+        url.searchParams.set('id', id);
+        els.about.style.display = 'none';
+        els.frame.style.display = 'block';
+        els.frame.src = tool.url;
+        els.headerTitle.innerText = tool.name;
+        els.btnOpen.disabled = false;
+        els.btnOpen.onclick = () => window.open(tool.url, '_blank');
+      }
+      history.pushState({}, '', url);
+    }
 
-/* Autodetect OWNER/REPO dari URL GitHub Pages */
-(function autoDetectRepo(){
-  if (CONFIG.OWNER && CONFIG.REPO) return;
-  const host = location.hostname;
-  const parts = host.split(".");
-  if (parts.length >= 3 && parts[1] === "github" && parts[2] === "io") {
-    const owner = parts[0];
-    const seg = location.pathname.split("/").filter(Boolean);
-    const repo = seg.length ? seg[0] : `${owner}.github.io`;
-    CONFIG.OWNER ||= owner;
-    CONFIG.REPO  ||= repo;
-  }
-})();
+    // --- Event Listeners ---
+    els.themeBtn.addEventListener('click', toggleTheme);
+    els.btnRefresh.addEventListener('click', fetchTools);
 
-/* STATE & ELEMENTS */
-let tools = []; // {id,name,url,desc}
-let currentId = null;
+    $('menuToggle').addEventListener('click', toggleSidebar);
 
-const $ = id => document.getElementById(id);
-const listEl = $("list"), frame = $("frame"), q = $("q");
-const currentTitle = $("currentTitle"), currentDesc = $("currentDesc");
-const openTool = $("openTool"), reloadTool = $("reloadTool"), btnShare = $("btnShare");
-const btnRefresh = $("btnRefresh"), repoLabel = $("repoLabel");
-const about = $("about"), aboutCreator = $("aboutCreator");
-const aboutTools = $("aboutTools"), aboutToolsNote = $("aboutToolsNote");
+    function toggleSidebar() {
+      els.sidebar.classList.toggle('open');
+      els.overlay.style.display = els.sidebar.classList.contains('open') ? 'block' : 'none';
+    }
 
-function setRepoLabel(){
-  const {OWNER, REPO} = CONFIG;
-  repoLabel.textContent = OWNER && REPO ? `${OWNER}/${REPO} · tools/` : "Repo tidak dikenali";
-}
-function setCreator(){ aboutCreator.innerHTML = CONFIG.CREATOR_HTML || aboutCreator.innerHTML; }
-setRepoLabel(); setCreator();
+    els.searchInput.addEventListener('input', renderList);
 
-/* DISCOVERY via GitHub API */
-const BRANCH_CANDIDATES = ["gh-pages","main","master"];
+    $('btnShare').addEventListener('click', () => {
+      navigator.clipboard.writeText(window.location.href);
+      const btn = $('btnShare');
+      const original = btn.innerHTML;
+      btn.innerHTML = '✅ Copied';
+      setTimeout(() => btn.innerHTML = original, 2000);
+    });
 
-async function discoverTools() {
-  const {OWNER, REPO} = CONFIG;
-  tools = [];
-  if (!OWNER || !REPO) { renderList(); renderAboutTools(); showAbout(); return; }
+    // --- Init ---
+    initTheme();
+    fetchTools();
 
-  let found = false, lastErr = null;
-  for (const ref of BRANCH_CANDIDATES) {
-    try {
-      const api = `https://api.github.com/repos/${OWNER}/${REPO}/contents/tools?ref=${encodeURIComponent(ref)}`;
-      const res = await fetch(api, {headers:{'Accept':'application/vnd.github+json'}});
-      if (!res.ok) { lastErr = new Error(`${res.status} ${res.statusText}`); continue; }
-      const arr = await res.json();
-      const htmlFiles = arr.filter(x => x.type === "file" && /\.html?$/i.test(x.name) && x.name.toLowerCase() !== "index.html");
-
-      const basePath = window.location.pathname.replace(/\/$/,'');
-      const publicBase = `${window.location.origin}${basePath}/tools`;
-
-      tools = htmlFiles.map(f => ({
-        id: crypto.randomUUID(),
-        name: prettifyName(f.name),
-        url: `${publicBase}/${encodeURIComponent(f.name)}`,
-        desc: suggestDesc(f.name)
-      }));
-      found = true; break;
-    } catch (e) { lastErr = e; }
-  }
-  if (!found && lastErr) console.warn("Discovery gagal:", lastErr);
-
-  renderList();
-  renderAboutTools();
-
-  if (!selectFromQuery()) showAbout();
-}
-
-function prettifyName(filename){
-  return filename.replace(/\.html?$/i,"").replace(/[-_]/g," ").replace(/\b\w/g, m => m.toUpperCase());
-}
-function suggestDesc(filename){
-  const f = filename.toLowerCase();
-  if (f.includes("nik")) return "Identifikasi & generator NIK (KTP) + kode wilayah.";
-  if (f.includes("nopol") || f.includes("plat")) return "Cek asal daerah nomor polisi (plat) Indonesia.";
-  if (f.includes("watermark")) return "Tambah watermark teks untuk melindungi dokumen PII.";
-  return "Utility web — berjalan langsung di browser.";
-}
-
-/* LIST (sidebar) */
-function toolRow(t){
-  const div = document.createElement("div");
-  div.className = "tool"; div.dataset.id = t.id;
-
-  const icon = document.createElement("div");
-  icon.className = "icon"; icon.textContent = "T";
-
-  const meta = document.createElement("div");
-  meta.className = "meta";
-  const nm = document.createElement("div");
-  nm.className = "name"; nm.textContent = t.name;
-  const ul = document.createElement("div");
-  ul.className = "url"; ul.textContent = t.url;
-  meta.appendChild(nm); meta.appendChild(ul);
-
-  const btns = document.createElement("div");
-  const bOpen = document.createElement("button");
-  bOpen.className = "btn ghost"; bOpen.textContent = "Open";
-  bOpen.onclick = (e)=>{ e.stopPropagation(); window.open(t.url, "_blank"); };
-  btns.appendChild(bOpen);
-
-  div.appendChild(icon); div.appendChild(meta); div.appendChild(btns);
-  div.onclick = ()=>selectTool(t.id);
-  return div;
-}
-function makeAboutItem(){
-  const div = document.createElement("div");
-  div.className = "tool"; div.dataset.id = "about";
-  const icon = document.createElement("div");
-  icon.className = "icon"; icon.textContent = "ℹ";
-  const meta = document.createElement("div");
-  meta.className = "meta";
-  const nm = document.createElement("div");
-  nm.className = "name"; nm.textContent = "About Dashboard";
-  const ul = document.createElement("div");
-  ul.className = "url"; ul.textContent = "Informasi & tujuan proyek";
-  meta.appendChild(nm); meta.appendChild(ul);
-  const btns = document.createElement("div");
-  const bOpen = document.createElement("button");
-  bOpen.className = "btn ghost"; bOpen.textContent = "Open";
-  bOpen.onclick = (e)=>{ e.stopPropagation(); showAbout(); };
-  btns.appendChild(bOpen);
-  div.appendChild(icon); div.appendChild(meta); div.appendChild(btns);
-  div.onclick = showAbout;
-  return div;
-}
-function renderList(){
-  const term = (q.value||"").toLowerCase().trim();
-  listEl.innerHTML = "";
-  listEl.appendChild(makeAboutItem());
-  tools.filter(t => !term || t.name.toLowerCase().includes(term) || t.url.toLowerCase().includes(term))
-       .forEach(t => listEl.appendChild(toolRow(t)));
-}
-
-/* ABOUT tools grid */
-function renderAboutTools(){
-  aboutTools.innerHTML = "";
-  const subset = tools.slice(0,6);
-  if (!subset.length){
-    aboutTools.innerHTML = `<div class="tcard"><div class="tname">Belum ada tool</div><div class="muted">Tambahkan file .html ke folder <code>tools/</code>.</div></div>`;
-    aboutToolsNote.style.display = "none";
-    return;
-  }
-  subset.forEach(t=>{
-    const el = document.createElement("div");
-    el.className = "tcard";
-    el.innerHTML = `
-      <div class="tname">${t.name}</div>
-      <div class="muted" style="min-height:36px">${t.desc||""}</div>
-      <div class="tiny" style="margin-top:8px">
-        <a class="link" href="${t.url}" target="_blank">Buka langsung ↗</a> ·
-        <a class="link" href="javascript:void(0)" data-id="${t.id}">Preview di panel</a>
-      </div>
-    `;
-    el.querySelector('a[data-id]').addEventListener('click', ()=>selectTool(t.id));
-    aboutTools.appendChild(el);
-  });
-  aboutToolsNote.style.display = subset.length ? "block" : "none";
-}
-
-/* VIEW / SELECT */
-function selectTool(id, push=true){
-  if (id === "about"){ showAbout(); return; }
-  const t = tools.find(x => x.id === id);
-  if(!t) return;
-  currentId = id;
-  currentTitle.textContent = t.name || "Untitled";
-  currentDesc.textContent = t.desc || "";
-  about.hidden = true;
-  frame.hidden = false;
-  frame.src = t.url;
-  openTool.disabled = false;
-  reloadTool.disabled = false;
-  if (push) updateQueryId(id);
-}
-function showAbout(){
-  currentId = "about";
-  currentTitle.textContent = "About this dashboard";
-  currentDesc.textContent = "";
-  frame.hidden = true;
-  about.hidden = false;
-  openTool.disabled = true;
-  reloadTool.disabled = true;
-  updateQueryId(null);
-}
-
-/* SHARE (?id=...) */
-function updateQueryId(id){
-  const url = new URL(window.location.href);
-  if(id) url.searchParams.set("id", id); else url.searchParams.delete("id");
-  history.replaceState(null, "", url.toString());
-}
-function selectFromQuery(){
-  const url = new URL(window.location.href);
-  const id = url.searchParams.get("id");
-  if(!id) return false;
-  if (id === "about"){ showAbout(); return true; }
-  const exists = tools.some(t=>t.id===id);
-  if(exists){ selectTool(id, false); return true; }
-  return false;
-}
-
-/* EVENTS */
-$("openTool").onclick = ()=>{ const t = tools.find(x=>x.id===currentId); if(t) window.open(t.url, "_blank"); };
-$("reloadTool").onclick = ()=>{ if(!frame.hidden && frame.src) frame.contentWindow.location.reload(); };
-$("btnShare").onclick = ()=>{
-  const link = window.location.href;
-  navigator.clipboard.writeText(link).then(()=>{ $("btnShare").textContent = "Copied!"; setTimeout(()=>$("btnShare").textContent="Share",900); });
-};
-$("btnRefresh").onclick = ()=>discoverTools();
-q.addEventListener("input", renderList);
-
-/* BOOT */
-discoverTools();
-$("ver").textContent = "1.0.0";
-$("upd").textContent = "Nov 2025";
-</script>
+  </script>
 </body>
+
 </html>
